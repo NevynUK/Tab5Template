@@ -39,3 +39,14 @@
 
 # debug information files
 *.dwo
+
+#
+# ESP32 specific files
+#
+# Third party components and libraries.
+managed_components
+
+# Build artifacts
+build
+
+sdkconfig.old

@@ -6,7 +6,7 @@ M5GFX display;
 void Setup(void)
 {
     display.init();
-    display.setBrightness(128);  // AXP2101 backlight — 0 by default, must be set explicitly
+    display.setBrightness(128); // AXP2101 backlight — 0 by default, must be set explicitly
     display.setFont(&fonts::Font4);
     // Tab5 native panel is portrait (720×1280); rotation 3 = landscape rotated 180 degrees (1280×720)
     display.setRotation(3);
@@ -55,16 +55,16 @@ void Loop(void)
             int s = tp[i].size + 3;
             switch (tp[i].id)
             {
-            case 0:
-                display.fillCircle(tp[i].x, tp[i].y, s);
-                break;
-            case 1:
-                display.drawLine(tp[i].x - s, tp[i].y - s, tp[i].x + s, tp[i].y + s);
-                display.drawLine(tp[i].x - s, tp[i].y + s, tp[i].x + s, tp[i].y - s);
-                break;
-            default:
-                display.fillTriangle(tp[i].x - s, tp[i].y + s, tp[i].x + s, tp[i].y + s, tp[i].x, tp[i].y - s);
-                break;
+                case 0:
+                    display.fillCircle(tp[i].x, tp[i].y, s);
+                    break;
+                case 1:
+                    display.drawLine(tp[i].x - s, tp[i].y - s, tp[i].x + s, tp[i].y + s);
+                    display.drawLine(tp[i].x - s, tp[i].y + s, tp[i].x + s, tp[i].y - s);
+                    break;
+                default:
+                    display.fillTriangle(tp[i].x - s, tp[i].y + s, tp[i].x + s, tp[i].y + s, tp[i].x, tp[i].y - s);
+                    break;
             }
             display.display();
         }

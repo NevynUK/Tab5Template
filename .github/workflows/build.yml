@@ -1,0 +1,28 @@
+name: Build
+
+on:
+  repository_dispatch:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout source code
+      uses: actions/checkout@v4
+
+    - name: Update submodules
+      run: git submodule update --init --recursive
+      id: Update-submodules
+            
+    - name: Build the code
+      run: docker run --rm -v $PWD:/project -w /project espressif/idf:release-v5.5.3 idf.py build
+      id: esp-idf-build
+
+    - name: Show the exit code
+      run: echo "The exit code was ${{ steps.esp-idf-build.outputs.result }}"

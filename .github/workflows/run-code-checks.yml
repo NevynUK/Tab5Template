@@ -1,0 +1,27 @@
+name: Run code checks.
+
+on:
+  repository_dispatch:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-24.04
+
+    steps:
+    - name: Checkout source code
+      uses: actions/checkout@v4
+
+    - name: Build Docker image for the code checking tools.
+      run: docker build -t code-checks -f ./DockerFiles/CodeChecks/Dockerfile .
+
+    - name: Run code checks.
+      run: docker run --platform=linux/amd64 --rm -v $PWD:/project -w /project --user "$(id -u):$(id -g)" code-checks ./run-checks.sh
+      id: code-checks
+
+    - name: Show the exit code
+      run: echo "The exit code was ${{ steps.code-checks.outputs.result }}"      

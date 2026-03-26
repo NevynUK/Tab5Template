@@ -159,7 +159,7 @@ The project uses the following language versions:
 ### Formatting
 
 - Use Allman style
-- Formatting rules are in the .clang-format file
+- Formatting rules are in the `.clang-format` file
 - All spelling will be UK English.
 - ise is preferred over ize
 - All Namespaces, Classes, Functions and variables should have a docstring.

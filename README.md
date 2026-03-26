@@ -1,5 +1,9 @@
 # Tab5Template
 
+[![Run code checks.](https://github.com/NevynUK/Tab5Template/actions/workflows/run-code-checks.yml/badge.svg)](https://github.com/NevynUK/Tab5Template/actions/workflows/run-code-checks.yml)
+
+[![Build](https://github.com/NevynUK/Tab5Template/actions/workflows/build.yml/badge.svg)](https://github.com/NevynUK/Tab5Template/actions/workflows/build.yml)
+
 Template application for the [M5Stack Tab5](https://docs.m5stack.com/en/core/Tab5) development platform.
 
 ## Running the Application

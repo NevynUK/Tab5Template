@@ -49,4 +49,5 @@ managed_components
 # Build artifacts
 build
 
+sdkconfig
 sdkconfig.old

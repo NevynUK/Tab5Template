@@ -21,7 +21,7 @@ jobs:
       id: Update-submodules
             
     - name: Build the code
-      run: docker run --rm -v $PWD:/project -w /project espressif/idf:release-v5.5.3 idf.py build
+      run: docker run --rm -v $PWD:/project -w /project espressif/idf:release-v5.5 ./build.sh --build
       id: esp-idf-build
 
     - name: Show the exit code

@@ -1,22 +1,25 @@
-# Copilot Instructions — M5Test (M5Stack Tab5 / ESP32-P4)
+# Copilot Instructions — Tab5Template (M5Stack Tab5 / ESP32-P4)
 
 ## Project Overview
 
-**M5Test** is ESP-IDF firmware for the **M5Stack Tab5** development tablet.
+**Tab5Template** is ESP-IDF firmware for the **M5Stack Tab5** development tablet.
 
 | Item | Value |
 |---|---|
 | SoC | ESP32-P4 (dual-core Xtensa LX9, 400 MHz) |
 | PSRAM | 32 MB HEX PSRAM @ 200 MHz |
 | Display | 1280×800 MIPI-DSI (native portrait: 720×1280) |
+| Touch controller | ST7123 (I2C address 0x14, interrupt on GPIO 23) |
 | Co-processor | ESP32-C6 (WiFi 6 / BLE 5) |
 | Flash | 16 MB |
 | PMU | AXP2101 |
-| Language | C++23 |
+| Language | C++20 |
 | Build system | ESP-IDF v5.5.1 (CMake) |
 | Libraries (Managed Components) | M5GFX, M5Unified |
 
-Entry point: `main/M5Test.cpp` — `app_main()` calls `setup()` then loops `loop()`.
+Entry point: `main/Tab5Template.cpp` — `app_main()` calls `Setup()` then deletes
+itself via `vTaskDelete(nullptr)`.  All ongoing work runs in FreeRTOS tasks owned
+by the component classes (e.g. `TouchInput`).
 
 ---
 
@@ -24,16 +27,79 @@ Entry point: `main/M5Test.cpp` — `app_main()` calls `setup()` then loops `loop
 
 ```
 Tab5Template/
-├── .github/copilot-instructions.md   # This file
+├── .github/
+│   └── copilot-instructions.md       # This file
 ├── main/
 │   ├── Tab5Template.cpp              # Application entry point
 │   ├── idf_component.yml             # IDF component manager manifest
-│   └── CMakeLists.txt
-├── CMakeLists.txt                    # Top-level; sets C++23, adds component dirs
-├── partitions.csv                    # Custom 16MB partition table (4MB app + SPIFFS)
+│   └── CMakeLists.txt                # Registers Tab5Template.cpp; requires Tab5, m5unified, m5gfx
+├── components/
+│   └── Tab5/
+│       ├── CMakeLists.txt            # Registers Tab5 component; requires m5gfx, driver, freertos
+│       ├── Touch.hpp                 # TouchInput singleton — interrupt-driven touch input
+│       └── Touch.cpp
+├── CMakeLists.txt                    # Top-level; sets C++20, adds components/Tab5
+├── partitions.csv                    # Custom 16 MB partition table (4 MB app + SPIFFS)
 ├── sdkconfig                         # Live build config — do not edit manually
 └── sdkconfig.defaults                # Canonical intended settings
 ```
+
+---
+
+## Architecture
+
+### Component layout
+
+Application-level code lives in `main/`.  Reusable hardware abstractions live
+as individual ESP-IDF components under `components/`.  The top-level
+`CMakeLists.txt` registers additional component directories:
+
+```cmake
+list(APPEND EXTRA_COMPONENT_DIRS components/Tab5)
+```
+
+New hardware drivers or services should be added as separate components under
+`components/` following the same pattern, then listed in `EXTRA_COMPONENT_DIRS`
+and added to the consumer's `REQUIRES`.
+
+### TouchInput (`components/Tab5/`)
+
+`TouchInput` is a singleton class that owns all touch input handling:
+
+- Configures GPIO 23 as a falling-edge interrupt input (after `display.init()`
+  has finished using it as an address-select output).
+- Spawns a FreeRTOS task (`TouchTask`) that blocks on a binary semaphore given
+  by the ISR.
+- On wakeup, calls `getTouchRaw()` and `convertRawXY()`, then dispatches
+  screen-space `lgfx::touch_point_t` data to all registered callbacks.
+- Supports multiple callbacks added/removed at runtime; thread-safe via a mutex.
+- Destructor removes the ISR, deletes the task and both semaphores, resets the
+  singleton pointer.
+
+**Key constraint:** `TouchInput::Initialise()` must be called _after_
+`display.init()` because M5GFX drives GPIO 23 high during initialisation to
+select the ST7123 I2C address (HIGH = 0x14).
+
+```cpp
+// Typical usage
+TouchInput::Initialise(display, OnTouchEvent);          // with initial callback
+TouchInput::Initialise(display);                        // no initial callback
+TouchInput::GetInstance()->AddCallback(myCallback);
+TouchInput::GetInstance()->RemoveCallback(myCallback);
+```
+
+Callback signature:
+
+```cpp
+void MyCallback(const lgfx::touch_point_t* touchPoints, int pointCount);
+// pointCount == 0 means all fingers lifted
+```
+
+### app_main pattern
+
+`app_main` calls `Setup()` then immediately calls `vTaskDelete(nullptr)` to free
+its stack.  No polling loop is needed; all work is driven by FreeRTOS tasks owned
+by the component layer.
 
 ---
 
@@ -106,10 +172,10 @@ which is too small for M5Unified + M5GFX with MIPI-DSI drivers.
 
 ```cpp
 #include <M5GFX.h>
-M5GFX display;   // global instance
+M5GFX display;   // global instance in main/Tab5Template.cpp
 ```
 
-### Initialisation (in setup())
+### Initialisation (in Setup())
 
 ```cpp
 display.init();                  // init panel + auto-enables backlight at brightness 127
@@ -123,7 +189,7 @@ display.display();               // flush framebuffer to MIPI-DSI panel — requ
 ### Drawing
 
 ```cpp
-display.startWrite();            // begin batched SPI/DSI transaction
+display.startWrite();            // begin batched DSI transaction
 display.fillScreen(color);
 display.fillRect(x, y, w, h, color);
 display.fillCircle(x, y, r);
@@ -135,17 +201,32 @@ display.display();               // flush — always call after drawing in MIPI-
 
 ### Touch
 
-```cpp
-lgfx::touch_point_t tp[5];
-int count = display.getTouchRaw(tp, 5);   // raw panel coords
-display.convertRawXY(tp, count);          // convert to screen coords after rotation
-```
+Touch is handled exclusively through `TouchInput`.  Do not call `getTouchRaw()`
+or `convertRawXY()` directly from application code — register a callback instead.
 
 ### Display dimensions (after setRotation)
 
 - `display.width()` — 1280 (landscape)
 - `display.height()` — 720 (landscape)
 - Native panel is portrait (720×1280); rotation adjusts these values.
+
+---
+
+## File Headers
+
+Every `.cpp` and `.hpp` file must begin with a block comment containing:
+
+```cpp
+/*-----------------------------------------------------------------------------
+ * File        : FileName.cpp
+ * Description : One or two sentences describing the file's purpose.
+ * Author      : Mark Stevens
+ * Copyright   : Copyright (c) 2026 Mark Stevens
+ * Licence     : MIT — see LICENSE in the repository root for full terms.
+ * Target      : M5Stack Tab5 (ESP32-P4)
+ * Build system: ESP-IDF v5.5.1
+ *---------------------------------------------------------------------------*/
+```
 
 ---
 
@@ -190,3 +271,5 @@ The project uses the following language versions:
 - Use spaces around operators
 - Use spaces after commas
 - Use spaces after casts
+- Prefer `char *variable` over `char* variable` for pointer declarations
+- Prefer `char &variable` over `char& variable` for reference declarations

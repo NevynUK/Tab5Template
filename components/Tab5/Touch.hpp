@@ -49,7 +49,7 @@ public:
      * @param pointCount   Number of valid entries in touchPoints.  May be
      *                     zero when all fingers have been lifted.
      */
-    using TouchCallback = void (*)(const lgfx::touch_point_t* touchPoints, int pointCount);
+    using TouchCallback = void (*)(const lgfx::touch_point_t *touchPoints, int pointCount);
 
     /**
      * @brief Returns the existing singleton instance.
@@ -57,7 +57,7 @@ public:
      * @return Pointer to the singleton, or nullptr if Initialise() has not
      *         yet been called.
      */
-    static TouchInput* GetInstance();
+    static TouchInput *GetInstance();
 
     /**
      * @brief Creates and initialises the singleton with no registered callback.
@@ -70,7 +70,7 @@ public:
      * @return Pointer to the newly created singleton, or nullptr if the
      *         singleton already exists.
      */
-    static TouchInput* Initialise(M5GFX& display);
+    static TouchInput *Initialise(M5GFX &display);
 
     /**
      * @brief Creates and initialises the singleton with one pre-registered callback.
@@ -84,7 +84,7 @@ public:
      * @return Pointer to the newly created singleton, or nullptr if the
      *         singleton already exists.
      */
-    static TouchInput* Initialise(M5GFX& display, TouchCallback callback);
+    static TouchInput *Initialise(M5GFX &display, TouchCallback callback);
 
     /**
      * @brief Destructor.
@@ -135,7 +135,7 @@ private:
      *
      * @param display  Reference to the global M5GFX display instance.
      */
-    explicit TouchInput(M5GFX& display);
+    explicit TouchInput(M5GFX &display);
 
     /**
      * @brief ISR fired on the falling edge of TOUCH_INTERRUPT_PIN.
@@ -145,7 +145,7 @@ private:
      *
      * @param arg  Pointer to the TouchInput singleton instance.
      */
-    static void IRAM_ATTR InterruptHandler(void* arg);
+    static void IRAM_ATTR InterruptHandler(void *arg);
 
     /**
      * @brief FreeRTOS task entry point for touch event processing.
@@ -155,13 +155,13 @@ private:
      *
      * @param parameter  Pointer to the TouchInput singleton instance.
      */
-    static void Task(void* parameter);
+    static void Task(void *parameter);
 
     /** The single instance of this class. */
-    static TouchInput* _instance;
+    static TouchInput *_instance;
 
     /** Reference to the display used to read and convert touch data. */
-    M5GFX& _display;
+    M5GFX &_display;
 
     /** Binary semaphore signalled by the ISR when touch data is ready. */
     SemaphoreHandle_t _semaphore;

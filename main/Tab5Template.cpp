@@ -27,7 +27,7 @@ M5GFX display;
  * @param pointCount   Number of valid entries in touchPoints.  Zero when all
  *                     fingers have been lifted.
  */
-static void OnTouchEvent(const lgfx::touch_point_t* touchPoints, int pointCount)
+static void OnTouchEvent(const lgfx::touch_point_t *touchPoints, int pointCount)
 {
     static bool drawn = false;
 
@@ -55,15 +55,11 @@ static void OnTouchEvent(const lgfx::touch_point_t* touchPoints, int pointCount)
                     display.fillCircle(touchPoints[i].x, touchPoints[i].y, size);
                     break;
                 case 1:
-                    display.drawLine(touchPoints[i].x - size, touchPoints[i].y - size,
-                                     touchPoints[i].x + size, touchPoints[i].y + size);
-                    display.drawLine(touchPoints[i].x - size, touchPoints[i].y + size,
-                                     touchPoints[i].x + size, touchPoints[i].y - size);
+                    display.drawLine(touchPoints[i].x - size, touchPoints[i].y - size, touchPoints[i].x + size, touchPoints[i].y + size);
+                    display.drawLine(touchPoints[i].x - size, touchPoints[i].y + size, touchPoints[i].x + size, touchPoints[i].y - size);
                     break;
                 default:
-                    display.fillTriangle(touchPoints[i].x - size, touchPoints[i].y + size,
-                                         touchPoints[i].x + size, touchPoints[i].y + size,
-                                         touchPoints[i].x,        touchPoints[i].y - size);
+                    display.fillTriangle(touchPoints[i].x - size, touchPoints[i].y + size, touchPoints[i].x + size, touchPoints[i].y + size, touchPoints[i].x, touchPoints[i].y - size);
                     break;
             }
             display.display();

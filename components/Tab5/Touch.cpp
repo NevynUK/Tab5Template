@@ -16,51 +16,47 @@
 #include <algorithm>
 
 /** Initialise the static singleton pointer to null. */
-TouchInput* TouchInput::_instance = nullptr;
+TouchInput *TouchInput::_instance = nullptr;
 
-TouchInput* TouchInput::GetInstance()
+TouchInput *TouchInput::GetInstance()
 {
-    return(_instance);
+    return (_instance);
 }
 
-TouchInput* TouchInput::Initialise(M5GFX& display)
+TouchInput *TouchInput::Initialise(M5GFX &display)
 {
     if (_instance != nullptr)
     {
-        return(nullptr);
+        return (nullptr);
     }
 
     _instance = new TouchInput(display);
-    return(_instance);
+    return (_instance);
 }
 
-TouchInput* TouchInput::Initialise(M5GFX& display, TouchCallback callback)
+TouchInput *TouchInput::Initialise(M5GFX &display, TouchCallback callback)
 {
-    TouchInput* instance = Initialise(display);
+    TouchInput *instance = Initialise(display);
 
     if (instance != nullptr && callback != nullptr)
     {
         instance->AddCallback(callback);
     }
 
-    return(instance);
+    return (instance);
 }
 
-TouchInput::TouchInput(M5GFX& display)
-    : _display(display),
-      _semaphore(nullptr),
-      _taskHandle(nullptr),
-      _callbackMutex(nullptr)
+TouchInput::TouchInput(M5GFX &display) : _display(display), _semaphore(nullptr), _taskHandle(nullptr), _callbackMutex(nullptr)
 {
-    _semaphore     = xSemaphoreCreateBinary();
+    _semaphore = xSemaphoreCreateBinary();
     _callbackMutex = xSemaphoreCreateMutex();
 
-    gpio_config_t ioConfiguration  = {};
-    ioConfiguration.pin_bit_mask   = (1ULL << TOUCH_INTERRUPT_PIN);
-    ioConfiguration.mode           = GPIO_MODE_INPUT;
-    ioConfiguration.pull_up_en     = GPIO_PULLUP_ENABLE;
-    ioConfiguration.pull_down_en   = GPIO_PULLDOWN_DISABLE;
-    ioConfiguration.intr_type      = GPIO_INTR_NEGEDGE;
+    gpio_config_t ioConfiguration = {};
+    ioConfiguration.pin_bit_mask = (1ULL << TOUCH_INTERRUPT_PIN);
+    ioConfiguration.mode = GPIO_MODE_INPUT;
+    ioConfiguration.pull_up_en = GPIO_PULLUP_ENABLE;
+    ioConfiguration.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    ioConfiguration.intr_type = GPIO_INTR_NEGEDGE;
     gpio_config(&ioConfiguration);
 
     gpio_install_isr_service(0);
@@ -125,17 +121,17 @@ void TouchInput::RemoveCallback(TouchCallback callback)
     xSemaphoreGive(_callbackMutex);
 }
 
-void IRAM_ATTR TouchInput::InterruptHandler(void* arg)
+void IRAM_ATTR TouchInput::InterruptHandler(void *arg)
 {
-    TouchInput* instance = static_cast<TouchInput*>(arg);
+    TouchInput *instance = static_cast<TouchInput *>(arg);
     BaseType_t higherPriorityTaskWoken = pdFALSE;
     xSemaphoreGiveFromISR(instance->_semaphore, &higherPriorityTaskWoken);
     portYIELD_FROM_ISR(higherPriorityTaskWoken);
 }
 
-void TouchInput::Task(void* parameter)
+void TouchInput::Task(void *parameter)
 {
-    TouchInput* instance = static_cast<TouchInput*>(parameter);
+    TouchInput *instance = static_cast<TouchInput *>(parameter);
 
     while (true)
     {
@@ -160,7 +156,7 @@ void TouchInput::Task(void* parameter)
         localCallbacks = instance->_callbacks;
         xSemaphoreGive(instance->_callbackMutex);
 
-        for (const auto& callback : localCallbacks)
+        for (const auto &callback: localCallbacks)
         {
             callback(touchPoints, pointCount);
         }

@@ -15,5 +15,6 @@ set(CMAKE_CXX_STANDARD 20)
 #   Add extra components.
 #
 # list(APPEND EXTRA_COMPONENT_DIRS components/M5Unified components/M5GFX)
+list(APPEND EXTRA_COMPONENT_DIRS components/Tab5)
 
 project(Tab5Template)

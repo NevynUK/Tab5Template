@@ -1,155 +1,93 @@
+/*-----------------------------------------------------------------------------
+ * File        : Tab5Template.cpp
+ * Description : Application entry point for the M5Stack Tab5 firmware.
+ *               Initialises the display and the interrupt-driven touch input,
+ *               then enters the main FreeRTOS loop.
+ * Author      : Mark Stevens
+ * Copyright   : Copyright (c) 2026 Mark Stevens
+ * Licence     : MIT — see LICENSE in the repository root for full terms.
+ * Target      : M5Stack Tab5 (ESP32-P4)
+ * Build system: ESP-IDF v5.5.1
+ *---------------------------------------------------------------------------*/
+
 #include <M5GFX.h>
-#include <driver/gpio.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/semphr.h>
-#include <freertos/task.h>
+#include "Touch.hpp"
 
 /** Global display instance. */
 M5GFX display;
 
 /**
- * GPIO 23 is used by M5GFX at boot as an I2C address-select output (HIGH = 0x14).
- * After display.init() completes the ST7123 is fully initialised at that address,
- * so the pin can safely be reconfigured as an interrupt input.  The ST7123 drives
- * it LOW when touch co-ordinate data is available.
+ * @brief Touch event callback.
  *
- * NOTE: This behaviour should be verified against the specific ST7123 firmware
- * version on your hardware.  If the pin never asserts low, the semaphore will not
- * be signalled and touch will not be reported.  In that case, remove the interrupt
- * approach and revert to polling via getTouchRaw().
+ * Invoked by TouchInput from the touch processing task whenever the ST7123
+ * reports a change.  Renders raw and converted co-ordinates as text and draws
+ * a shape at each touch point.  Clears the screen when all fingers are lifted.
+ *
+ * @param touchPoints  Array of screen-space touch points.
+ * @param pointCount   Number of valid entries in touchPoints.  Zero when all
+ *                     fingers have been lifted.
  */
-static constexpr gpio_num_t TOUCH_INTERRUPT_PIN = GPIO_NUM_23;
-
-/** Stack depth in words for the touch handler task. */
-static constexpr uint32_t TOUCH_TASK_STACK_SIZE = 4096;
-
-/** FreeRTOS priority for the touch handler task. */
-static constexpr UBaseType_t TOUCH_TASK_PRIORITY = 5;
-
-/** Binary semaphore signalled from the GPIO ISR when a touch interrupt fires. */
-static SemaphoreHandle_t _touchSemaphore = nullptr;
-
-/**
- * @brief GPIO ISR handler for the ST7123 touch interrupt pin.
- *
- * Runs in interrupt context on the falling edge of TOUCH_INTERRUPT_PIN.
- * Gives the binary semaphore to unblock TouchTask.
- *
- * @param arg Unused context pointer.
- */
-static void IRAM_ATTR TouchInterruptHandler(void* arg)
-{
-    BaseType_t higherPriorityTaskWoken = pdFALSE;
-    xSemaphoreGiveFromISR(_touchSemaphore, &higherPriorityTaskWoken);
-    portYIELD_FROM_ISR(higherPriorityTaskWoken);
-}
-
-/**
- * @brief FreeRTOS task that processes touch events.
- *
- * Blocks indefinitely on _touchSemaphore.  When unblocked by TouchInterruptHandler,
- * reads raw touch co-ordinates from the ST7123 via getTouchRaw(), converts them to
- * screen co-ordinates and renders visual feedback on the display.
- *
- * All display access is contained within this task so no mutex is required.
- *
- * @param parameter Unused task parameter.
- */
-static void TouchTask(void* parameter)
+static void OnTouchEvent(const lgfx::touch_point_t* touchPoints, int pointCount)
 {
     static bool drawn = false;
-    lgfx::touch_point_t tp[3];
 
-    while (true)
+    if (pointCount > 0)
     {
-        if (xSemaphoreTake(_touchSemaphore, portMAX_DELAY) == pdTRUE)
+        // Retrieve raw co-ordinates for display; getTouchRaw is called
+        // internally by TouchInput before conversion, so we mirror them here
+        // by showing the converted values in both rows for simplicity.
+        display.startWrite();
+
+        for (int i = 0; i < pointCount; ++i)
         {
-            int nums = display.getTouchRaw(tp, 3);
-            if (nums)
-            {
-                display.startWrite();
-
-                for (int i = 0; i < nums; ++i)
-                {
-                    display.setCursor(16, 16 + i * 24);
-                    display.printf("Raw X:%04d  Y:%04d    ", tp[i].x, tp[i].y);
-                }
-
-                display.convertRawXY(tp, nums);
-
-                for (int i = 0; i < nums; ++i)
-                {
-                    display.setCursor(16, 128 + i * 24);
-                    display.printf("Convert X:%04d  Y:%04d    ", tp[i].x, tp[i].y);
-                }
-                display.display();
-
-                display.setColor(display.isEPD() ? TFT_BLACK : TFT_WHITE);
-                for (int i = 0; i < nums; ++i)
-                {
-                    int s = tp[i].size + 3;
-                    switch (tp[i].id)
-                    {
-                        case 0:
-                            display.fillCircle(tp[i].x, tp[i].y, s);
-                            break;
-                        case 1:
-                            display.drawLine(tp[i].x - s, tp[i].y - s, tp[i].x + s, tp[i].y + s);
-                            display.drawLine(tp[i].x - s, tp[i].y + s, tp[i].x + s, tp[i].y - s);
-                            break;
-                        default:
-                            display.fillTriangle(tp[i].x - s, tp[i].y + s, tp[i].x + s, tp[i].y + s, tp[i].x, tp[i].y - s);
-                            break;
-                    }
-                    display.display();
-                }
-
-                display.endWrite();
-                drawn = true;
-            }
-            else if (drawn)
-            {
-                drawn = false;
-                display.startWrite();
-                display.waitDisplay();
-                display.clear();
-                display.display();
-                display.endWrite();
-            }
+            display.setCursor(16, 16 + i * 24);
+            display.printf("Touch %d  X:%04d  Y:%04d    ", touchPoints[i].id, touchPoints[i].x, touchPoints[i].y);
         }
+        display.display();
+
+        display.setColor(display.isEPD() ? TFT_BLACK : TFT_WHITE);
+        for (int i = 0; i < pointCount; ++i)
+        {
+            int size = touchPoints[i].size + 3;
+            switch (touchPoints[i].id)
+            {
+                case 0:
+                    display.fillCircle(touchPoints[i].x, touchPoints[i].y, size);
+                    break;
+                case 1:
+                    display.drawLine(touchPoints[i].x - size, touchPoints[i].y - size,
+                                     touchPoints[i].x + size, touchPoints[i].y + size);
+                    display.drawLine(touchPoints[i].x - size, touchPoints[i].y + size,
+                                     touchPoints[i].x + size, touchPoints[i].y - size);
+                    break;
+                default:
+                    display.fillTriangle(touchPoints[i].x - size, touchPoints[i].y + size,
+                                         touchPoints[i].x + size, touchPoints[i].y + size,
+                                         touchPoints[i].x,        touchPoints[i].y - size);
+                    break;
+            }
+            display.display();
+        }
+
+        display.endWrite();
+        drawn = true;
     }
-}
-
-/**
- * @brief Configures the touch interrupt GPIO and starts the touch handler task.
- *
- * Must be called after display.init() so that the ST7123 is fully initialised
- * and GPIO_NUM_23 can be safely reconfigured from address-select output to
- * falling-edge interrupt input.
- */
-static void InitialiseTouchInterrupt(void)
-{
-    _touchSemaphore = xSemaphoreCreateBinary();
-
-    gpio_config_t ioConfiguration = {};
-    ioConfiguration.pin_bit_mask = (1ULL << TOUCH_INTERRUPT_PIN);
-    ioConfiguration.mode         = GPIO_MODE_INPUT;
-    ioConfiguration.pull_up_en   = GPIO_PULLUP_ENABLE;
-    ioConfiguration.pull_down_en = GPIO_PULLDOWN_DISABLE;
-    ioConfiguration.intr_type    = GPIO_INTR_NEGEDGE;
-    gpio_config(&ioConfiguration);
-
-    gpio_install_isr_service(0);
-    gpio_isr_handler_add(TOUCH_INTERRUPT_PIN, TouchInterruptHandler, nullptr);
-
-    xTaskCreate(TouchTask, "TouchTask", TOUCH_TASK_STACK_SIZE, nullptr, TOUCH_TASK_PRIORITY, nullptr);
+    else if (drawn)
+    {
+        drawn = false;
+        display.startWrite();
+        display.waitDisplay();
+        display.clear();
+        display.display();
+        display.endWrite();
+    }
 }
 
 /**
  * @brief One-time application setup.
  *
- * Initialises the display, renders a splash screen, and starts the
- * interrupt-driven touch handler.
+ * Initialises the display, renders a splash screen, and creates the
+ * TouchInput singleton with OnTouchEvent pre-registered as its callback.
  */
 void Setup(void)
 {
@@ -172,15 +110,17 @@ void Setup(void)
     display.setTextColor(TFT_WHITE, TFT_BLACK);
 
     // display.init() configured GPIO_NUM_23 as output-high to select the ST7123
-    // I2C address.  Now that init is complete, reconfigure it as an interrupt input.
-    InitialiseTouchInterrupt();
+    // I2C address.  Now that init is complete, TouchInput can safely reconfigure
+    // it as a falling-edge interrupt input.
+    TouchInput::Initialise(display, OnTouchEvent);
 }
 
 extern "C" void app_main(void)
 {
     Setup();
-    while (1)
-    {
-        vTaskDelay(pdMS_TO_TICKS(100));
-    }
+
+    // All work is performed by the TouchInput FreeRTOS task.
+    // Deleting this task frees its stack and TCB immediately rather than
+    // keeping a do-nothing loop alive indefinitely.
+    vTaskDelete(nullptr);
 }

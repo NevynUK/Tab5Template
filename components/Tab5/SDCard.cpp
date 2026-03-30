@@ -58,8 +58,7 @@ SDCard::SDCard() : _card(nullptr), _powerControlHandle(nullptr), _mounted(false)
     esp_err_t result = esp_ldo_acquire_channel(&ldoConfig, &_powerControlHandle);
     if (result != ESP_OK)
     {
-        ESP_LOGE(LOG_TAG, "Failed to acquire on-chip LDO channel %d: %s",
-                 SD_LDO_CHANNEL, esp_err_to_name(result));
+        ESP_LOGE(LOG_TAG, "Failed to acquire on-chip LDO channel %d: %s", SD_LDO_CHANNEL, esp_err_to_name(result));
         return;
     }
 
@@ -95,14 +94,17 @@ SDCard::SDCard() : _card(nullptr), _powerControlHandle(nullptr), _mounted(false)
     {
         if (result == ESP_FAIL)
         {
-            ESP_LOGE(LOG_TAG, "Failed to mount FAT filesystem — card may be "
-                     "unformatted or corrupted.");
+            ESP_LOGE(
+                LOG_TAG, "Failed to mount FAT filesystem — card may be "
+                         "unformatted or corrupted.");
         }
         else
         {
-            ESP_LOGE(LOG_TAG, "Failed to initialise SD card (%s). "
-                     "Check that a card is inserted.",
-                     esp_err_to_name(result));
+            ESP_LOGE(
+                LOG_TAG,
+                "Failed to initialise SD card (%s). "
+                "Check that a card is inserted.",
+                esp_err_to_name(result));
         }
 
         // Release the LDO now that it will not be needed.
@@ -113,13 +115,10 @@ SDCard::SDCard() : _card(nullptr), _powerControlHandle(nullptr), _mounted(false)
 
     _mounted = true;
 
-    const uint64_t totalBytes =
-        static_cast<uint64_t>(_card->csd.capacity) *
-        static_cast<uint64_t>(_card->csd.sector_size);
+    const uint64_t totalBytes = static_cast<uint64_t>(_card->csd.capacity) * static_cast<uint64_t>(_card->csd.sector_size);
     const double sizeGb = static_cast<double>(totalBytes) / (1024.0 * 1024.0 * 1024.0);
 
-    ESP_LOGI(LOG_TAG, "SD card mounted at %s - %s  %.2f GB",
-             MOUNT_POINT, _card->cid.name, sizeGb);
+    ESP_LOGI(LOG_TAG, "SD card mounted at %s - %s  %.2f GB", MOUNT_POINT, _card->cid.name, sizeGb);
 }
 
 SDCard::~SDCard()
@@ -127,7 +126,7 @@ SDCard::~SDCard()
     if (_mounted)
     {
         esp_vfs_fat_sdcard_unmount(MOUNT_POINT, _card);
-        _card    = nullptr;
+        _card = nullptr;
         _mounted = false;
     }
 

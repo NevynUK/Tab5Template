@@ -114,7 +114,7 @@ void Setup(void)
     display.setTextColor(TFT_BLACK, TFT_WHITE);
     display.setTextDatum(textdatum_t::middle_center);
 
-    const int centreX = display.width()  / 2;
+    const int centreX = display.width() / 2;
     const int centreY = display.height() / 2;
 
     display.drawString("Tab5 Ready", centreX, centreY - 72);
@@ -135,9 +135,7 @@ void Setup(void)
     if (sdCard != nullptr && sdCard->IsMounted())
     {
         const sdmmc_card_t *card = sdCard->GetCard();
-        const uint64_t sizeBytes =
-            static_cast<uint64_t>(card->csd.capacity) *
-            static_cast<uint64_t>(card->csd.sector_size);
+        const uint64_t sizeBytes = static_cast<uint64_t>(card->csd.capacity) * static_cast<uint64_t>(card->csd.sector_size);
         const double sizeGb = static_cast<double>(sizeBytes) / (1024.0 * 1024.0 * 1024.0);
 
         char sdInfo[64];

@@ -7,10 +7,13 @@
  * Copyright   : Copyright (c) 2026 Mark Stevens
  * Licence     : MIT — see LICENSE in the repository root for full terms.
  * Target      : M5Stack Tab5 (ESP32-P4)
- * Build system: ESP-IDF v5.5.1
+ * Build system: ESP-IDF v5.5.3
  *---------------------------------------------------------------------------*/
 
 #include <M5GFX.h>
+#include <cstdio>
+#include <cstring>
+#include "SDCard.hpp"
 #include "Touch.hpp"
 
 /** Global display instance. */
@@ -80,10 +83,47 @@ static void OnTouchEvent(const lgfx::touch_point_t *touchPoints, int pointCount)
 }
 
 /**
+ * @brief Writes and reads back a test file on the SD card to verify I/O.
+ *
+ * Creates "/sdcard/tab5.txt", writes a known string, reads it back, and
+ * returns true if the content matches exactly.
+ *
+ * @return true if the write/read cycle succeeded.
+ */
+static bool TestSDCard()
+{
+    static constexpr const char *TEST_PATH = "/sdcard/tab5.txt";
+    static constexpr const char *TEST_CONTENT = "Tab5 SD card test\n";
+    static constexpr int TEST_LENGTH = 17; // chars before '\n'
+
+    FILE *file = fopen(TEST_PATH, "w");
+    if (file == nullptr)
+    {
+        return (false);
+    }
+    fputs(TEST_CONTENT, file);
+    fclose(file);
+
+    file = fopen(TEST_PATH, "r");
+    if (file == nullptr)
+    {
+        return (false);
+    }
+
+    char buffer[32] = {};
+    const char *line = fgets(buffer, static_cast<int>(sizeof(buffer)), file);
+    fclose(file);
+
+    return (line != nullptr && strncmp(buffer, "Tab5 SD card test", TEST_LENGTH) == 0);
+}
+
+/**
  * @brief One-time application setup.
  *
- * Initialises the display, renders a splash screen, and creates the
- * TouchInput singleton with OnTouchEvent pre-registered as its callback.
+ * Initialises the display, touch input, and microSD card, then renders a
+ * unified status splash showing the result of each subsystem.  All hardware
+ * is initialised before the display is updated so the splash is drawn in a
+ * single pass.
  */
 void Setup(void)
 {
@@ -93,22 +133,67 @@ void Setup(void)
     // Tab5 native panel is portrait (720×1280); rotation 3 = landscape rotated 180 degrees (1280×720)
     display.setRotation(3);
 
-    // Confirm display pipeline with a visible splash
-    display.fillScreen(TFT_WHITE);
-    display.setTextColor(TFT_BLACK, TFT_WHITE);
-    display.setTextDatum(textdatum_t::middle_center);
-    display.drawString("Tab5 Ready", display.width() / 2, display.height() / 2 - 24);
-    if (!display.touch())
-    {
-        display.drawString("Touch not found.", display.width() / 2, display.height() / 2 + 24);
-    }
-    display.display();
-    display.setTextColor(TFT_WHITE, TFT_BLACK);
-
     // display.init() configured GPIO_NUM_23 as output-high to select the ST7123
     // I2C address.  Now that init is complete, TouchInput can safely reconfigure
     // it as a falling-edge interrupt input.
     TouchInput::Initialise(display, OnTouchEvent);
+
+    // Initialise the microSD card before drawing the splash so its status can
+    // be included in a single display update.
+    SDCard *sdCard = SDCard::Initialise();
+
+    // -------------------------------------------------------------------------
+    // Status splash — drawn once after all hardware is ready.
+    // -------------------------------------------------------------------------
+    display.startWrite();
+    display.fillScreen(TFT_WHITE);
+    display.setTextColor(TFT_BLACK, TFT_WHITE);
+    display.setTextDatum(textdatum_t::middle_center);
+
+    const int centreX = display.width()  / 2;
+    const int centreY = display.height() / 2;
+
+    display.drawString("Tab5 Ready", centreX, centreY - 72);
+
+    // Touch subsystem status
+    if (!display.touch())
+    {
+        display.setTextColor(TFT_RED, TFT_WHITE);
+        display.drawString("Touch: not found", centreX, centreY - 24);
+        display.setTextColor(TFT_BLACK, TFT_WHITE);
+    }
+    else
+    {
+        display.drawString("Touch: OK", centreX, centreY - 24);
+    }
+
+    // SD card status and file I/O test
+    if (sdCard != nullptr && sdCard->IsMounted())
+    {
+        const sdmmc_card_t *card = sdCard->GetCard();
+        const uint64_t sizeBytes =
+            static_cast<uint64_t>(card->csd.capacity) *
+            static_cast<uint64_t>(card->csd.sector_size);
+        const double sizeGb = static_cast<double>(sizeBytes) / (1024.0 * 1024.0 * 1024.0);
+
+        char sdInfo[64];
+        snprintf(sdInfo, sizeof(sdInfo), "SD: %.1f GB  (%s)", sizeGb, card->cid.name);
+        display.drawString(sdInfo, centreX, centreY + 24);
+
+        const bool readWriteOk = TestSDCard();
+        display.drawString(readWriteOk ? "SD R/W: OK" : "SD R/W: failed",
+                           centreX, centreY + 72);
+    }
+    else
+    {
+        display.setTextColor(TFT_RED, TFT_WHITE);
+        display.drawString("SD card: not found", centreX, centreY + 24);
+        display.setTextColor(TFT_BLACK, TFT_WHITE);
+    }
+
+    display.endWrite();
+    display.display();
+    display.setTextColor(TFT_WHITE, TFT_BLACK);
 }
 
 extern "C" void app_main(void)

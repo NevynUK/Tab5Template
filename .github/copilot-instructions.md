@@ -35,9 +35,11 @@ Tab5Template/
 │   └── CMakeLists.txt                # Registers Tab5Template.cpp; requires Tab5, m5unified, m5gfx
 ├── components/
 │   └── Tab5/
-│       ├── CMakeLists.txt            # Registers Tab5 component; requires m5gfx, driver, freertos
+│       ├── CMakeLists.txt            # Registers Tab5 component; requires m5gfx, driver, freertos, sdmmc, fatfs
 │       ├── Touch.hpp                 # TouchInput singleton — interrupt-driven touch input
-│       └── Touch.cpp
+│       ├── Touch.cpp
+│       ├── SDCard.hpp                # SDCard singleton — SDMMC 4-bit microSD mount
+│       └── SDCard.cpp
 ├── CMakeLists.txt                    # Top-level; sets C++20, adds components/Tab5
 ├── partitions.csv                    # Custom 16 MB partition table (4 MB app + SPIFFS)
 ├── sdkconfig                         # Live build config — do not edit manually
@@ -94,6 +96,44 @@ Callback signature:
 void MyCallback(const lgfx::touch_point_t* touchPoints, int pointCount);
 // pointCount == 0 means all fingers lifted
 ```
+
+### SDCard (`components/Tab5/`)
+
+`SDCard` is a singleton class that mounts the microSD card slot via SDMMC 4-bit mode:
+
+- Acquires **on-chip LDO channel 4** to power the SD card slot (mandatory on Tab5).
+- Configures the SDMMC host (slot 0, 40 MHz) with the Tab5 GPIO pin assignments.
+- Mounts a FAT filesystem at `/sdcard` using `esp_vfs_fat_sdmmc_mount()`.
+- After a successful mount, standard POSIX file I/O works under `/sdcard/`.
+- Destructor unmounts the filesystem and releases the LDO.
+
+**Pin assignments** (from M5Stack Tab5 schematics):
+
+| Signal | GPIO |
+|--------|------|
+| CLK    | 43   |
+| CMD    | 44   |
+| D0     | 39   |
+| D1     | 40   |
+| D2     | 41   |
+| D3     | 42   |
+
+```cpp
+// Typical usage
+SDCard *sdCard = SDCard::Initialise();
+if (sdCard != nullptr && sdCard->IsMounted())
+{
+    const sdmmc_card_t *card = sdCard->GetCard();  // card->cid.name, card->csd.*
+
+    FILE *file = fopen("/sdcard/data.txt", "w");
+    fprintf(file, "Hello, Tab5!\n");
+    fclose(file);
+}
+```
+
+**Key constraint:** LDO channel 4 *must* be acquired before attempting to access
+the card.  Do not bypass `SDCard::Initialise()` and call `esp_vfs_fat_sdmmc_mount()`
+directly without first initialising the LDO — the card will not respond.
 
 ### app_main pattern
 

@@ -12,7 +12,6 @@
 
 #include <M5GFX.h>
 #include <cstdio>
-#include <cstring>
 #include "SDCard.hpp"
 #include "Touch.hpp"
 
@@ -83,41 +82,6 @@ static void OnTouchEvent(const lgfx::touch_point_t *touchPoints, int pointCount)
 }
 
 /**
- * @brief Writes and reads back a test file on the SD card to verify I/O.
- *
- * Creates "/sdcard/tab5.txt", writes a known string, reads it back, and
- * returns true if the content matches exactly.
- *
- * @return true if the write/read cycle succeeded.
- */
-static bool TestSDCard()
-{
-    static constexpr const char *TEST_PATH = "/sdcard/tab5.txt";
-    static constexpr const char *TEST_CONTENT = "Tab5 SD card test\n";
-    static constexpr int TEST_LENGTH = 17; // chars before '\n'
-
-    FILE *file = fopen(TEST_PATH, "w");
-    if (file == nullptr)
-    {
-        return (false);
-    }
-    fputs(TEST_CONTENT, file);
-    fclose(file);
-
-    file = fopen(TEST_PATH, "r");
-    if (file == nullptr)
-    {
-        return (false);
-    }
-
-    char buffer[32] = {};
-    const char *line = fgets(buffer, static_cast<int>(sizeof(buffer)), file);
-    fclose(file);
-
-    return (line != nullptr && strncmp(buffer, "Tab5 SD card test", TEST_LENGTH) == 0);
-}
-
-/**
  * @brief One-time application setup.
  *
  * Initialises the display, touch input, and microSD card, then renders a
@@ -167,7 +131,7 @@ void Setup(void)
         display.drawString("Touch: OK", centreX, centreY - 24);
     }
 
-    // SD card status and file I/O test
+    // SD card mount status
     if (sdCard != nullptr && sdCard->IsMounted())
     {
         const sdmmc_card_t *card = sdCard->GetCard();
@@ -179,10 +143,6 @@ void Setup(void)
         char sdInfo[64];
         snprintf(sdInfo, sizeof(sdInfo), "SD: %.1f GB  (%s)", sizeGb, card->cid.name);
         display.drawString(sdInfo, centreX, centreY + 24);
-
-        const bool readWriteOk = TestSDCard();
-        display.drawString(readWriteOk ? "SD R/W: OK" : "SD R/W: failed",
-                           centreX, centreY + 72);
     }
     else
     {

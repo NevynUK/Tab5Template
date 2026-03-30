@@ -118,7 +118,7 @@ SDCard::SDCard() : _card(nullptr), _powerControlHandle(nullptr), _mounted(false)
         static_cast<uint64_t>(_card->csd.sector_size);
     const double sizeGb = static_cast<double>(totalBytes) / (1024.0 * 1024.0 * 1024.0);
 
-    ESP_LOGI(LOG_TAG, "SD card mounted at %s  —  %s  %.2f GB",
+    ESP_LOGI(LOG_TAG, "SD card mounted at %s - %s  %.2f GB",
              MOUNT_POINT, _card->cid.name, sizeGb);
 }
 

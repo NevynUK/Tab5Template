@@ -35,11 +35,13 @@ Tab5Template/
 │   └── CMakeLists.txt                # Registers Tab5Template.cpp; requires Tab5, m5unified, m5gfx
 ├── components/
 │   └── Tab5/
-│       ├── CMakeLists.txt            # Registers Tab5 component; requires m5gfx, driver, freertos, sdmmc, fatfs
+│       ├── CMakeLists.txt            # Registers Tab5 component; requires m5gfx, driver, freertos, sdmmc, fatfs, esp_driver_i2c
 │       ├── Touch.hpp                 # TouchInput singleton — interrupt-driven touch input
 │       ├── Touch.cpp
 │       ├── SDCard.hpp                # SDCard singleton — SDMMC 4-bit microSD mount
-│       └── SDCard.cpp
+│       ├── SDCard.cpp
+│       ├── Rtc.hpp                   # Rtc singleton — Epson RX8130CE real-time clock
+│       └── Rtc.cpp
 ├── CMakeLists.txt                    # Top-level; sets C++20, adds components/Tab5
 ├── partitions.csv                    # Custom 16 MB partition table (4 MB app + SPIFFS)
 ├── sdkconfig                         # Live build config — do not edit manually
@@ -313,3 +315,65 @@ The project uses the following language versions:
 - Use spaces after casts
 - Prefer `char *variable` over `char* variable` for pointer declarations
 - Prefer `char &variable` over `char& variable` for reference declarations
+
+---
+
+## RTC API (`components/Tab5/`)
+
+`Rtc` is a singleton class for the **Epson RX8130CE** real-time clock chip.
+
+| Item | Value |
+|---|---|
+| Chip | Epson RX8130CE |
+| I2C address | 0x32 |
+| I2C bus pins | SDA = GPIO 7, SCL = GPIO 8 |
+| Interrupt | /IRQ via PMS150G-U06 to ESP32-P4 GPIO (configure separately) |
+
+- Opens an I2C master bus using the ESP-IDF v5 `esp_driver_i2c` component.
+- On first power-up, checks the VLF (oscillation-stop) flag and issues a software reset if set.
+- Provides time read/write via the standard C `struct tm`.
+- Provides day/date alarm with independent enable bits for minute, hour, and day/weekday.
+- Provides a 16-bit countdown wakeup timer with selectable clock source.
+- `GetFlags()` / `ClearFlags()` manage the Flag Register (0x1D); call `ClearFlags(FLAG_ALARM)` after handling an alarm interrupt to deassert /IRQ.
+
+```cpp
+// Typical usage
+Rtc *rtc = Rtc::Initialise();
+if (rtc != nullptr)
+{
+    // Set the time (struct tm: year = years-since-1900, month = 0-based)
+    struct tm now = {};
+    now.tm_year  = 2026 - 1900;
+    now.tm_mon   = 0;           // January
+    now.tm_mday  = 15;
+    now.tm_hour  = 10;
+    now.tm_min   = 30;
+    now.tm_sec   = 0;
+    rtc->SetTime(now);
+
+    // Read the time back
+    struct tm current = {};
+    rtc->GetTime(current);
+
+    // Configure a day alarm at 07:00 on day 16
+    Rtc::AlarmConfig alarm;
+    alarm.matchMinute = true;
+    alarm.matchHour   = true;
+    alarm.matchDay    = true;
+    alarm.minute      = 0;
+    alarm.hour        = 7;
+    alarm.day         = 16;
+    alarm.matchWeekday = false;
+    rtc->SetAlarm(alarm);
+    rtc->EnableAlarmInterrupt(true);
+
+    // Configure a 60-second wakeup timer
+    rtc->StartWakeupTimer(60, Rtc::TimerClockSource::Hz1, true);
+}
+```
+
+**Key constraints:**
+- After a power-on reset the VLF flag will be set; the driver logs a warning and performs a software reset.  The time must be re-set by the application after any software reset.
+- The ESP32-P4 deep-sleep wakeup source must be configured by the application using `esp_sleep_enable_ext0_wakeup()` pointing at the GPIO connected to the /IRQ output.
+- All time fields follow standard C `struct tm` semantics: `tm_year` = years since 1900, `tm_mon` = 0–11.
+- IDF component `esp_driver_i2c` must be listed in `REQUIRES` (already added to `components/Tab5/CMakeLists.txt`).

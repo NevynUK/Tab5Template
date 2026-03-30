@@ -9,7 +9,7 @@
  * Copyright   : Copyright (c) 2026 Mark Stevens
  * Licence     : MIT — see LICENSE in the repository root for full terms.
  * Target      : M5Stack Tab5 (ESP32-P4)
- * Build system: ESP-IDF v5.5.1
+ * Build system: ESP-IDF v5.5.3
  *---------------------------------------------------------------------------*/
 
 #pragma once

@@ -4,6 +4,12 @@
 CONFIG_IDF_TARGET="esp32p4"
 CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
 
+# Chip revision: Tab5 uses ESP32-P4 silicon revision 0.x/1.x.
+# Without ESP32P4_SELECTS_REV_LESS_V3, Kconfig only offers the {300,301} choice
+# set and builds a bootloader that esptool refuses to flash on this chip.
+CONFIG_ESP32P4_SELECTS_REV_LESS_V3=y
+CONFIG_ESP32P4_REV_MIN_1=y
+
 # PSRAM — ESP32-P4 uses HEX PSRAM (not OCT); 200MHz required for MIPI-DSI framebuffer DMA
 # CONFIG_SPIRAM_SPEED_200M depends on IDF_EXPERIMENTAL_FEATURES — both must be set together
 CONFIG_IDF_EXPERIMENTAL_FEATURES=y

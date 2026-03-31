@@ -326,7 +326,7 @@ The project uses the following language versions:
 |---|---|
 | Chip | Epson RX8130CE |
 | I2C address | 0x32 |
-| I2C bus pins | SDA = GPIO 7, SCL = GPIO 8 |
+| I2C bus pins | SDA = GPIO 31, SCL = GPIO 32 (shared internal bus, `I2C_NUM_1`) |
 | Interrupt | /IRQ via PMS150G-U06 to ESP32-P4 GPIO (configure separately) |
 
 - Opens an I2C master bus using the ESP-IDF v5 `esp_driver_i2c` component.
@@ -373,6 +373,7 @@ if (rtc != nullptr)
 ```
 
 **Key constraints:**
+- The RTC sits on the **internal I2C bus** (`I2C_NUM_1`, GPIO 31/32), which M5GFX also uses for the touch controller and IO expanders.  The constructor calls `i2c_master_get_bus_handle(I2C_NUM_1, ...)` to reuse the existing bus handle created by `display.init()` rather than opening a second one.  `Rtc::Initialise()` must therefore be called **after** `display.init()`.
 - After a power-on reset the VLF flag will be set; the driver logs a warning and performs a software reset.  The time must be re-set by the application after any software reset.
 - The ESP32-P4 deep-sleep wakeup source must be configured by the application using `esp_sleep_enable_ext0_wakeup()` pointing at the GPIO connected to the /IRQ output.
 - All time fields follow standard C `struct tm` semantics: `tm_year` = years since 1900, `tm_mon` = 0–11.

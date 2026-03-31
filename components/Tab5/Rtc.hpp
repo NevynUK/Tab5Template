@@ -294,11 +294,11 @@ private:
     /** @brief I2C clock frequency for RTC communication. */
     static constexpr uint32_t I2C_FREQUENCY_HZ = 400000;
 
-    /** @brief I2C SDA pin (Tab5 RTC bus). */
-    static constexpr gpio_num_t RTC_SDA_PIN = GPIO_NUM_7;
+    /** @brief I2C SDA pin — shared internal bus, GPIO 31. */
+    static constexpr gpio_num_t RTC_SDA_PIN = GPIO_NUM_31;
 
-    /** @brief I2C SCL pin (Tab5 RTC bus). */
-    static constexpr gpio_num_t RTC_SCL_PIN = GPIO_NUM_8;
+    /** @brief I2C SCL pin — shared internal bus, GPIO 32. */
+    static constexpr gpio_num_t RTC_SCL_PIN = GPIO_NUM_32;
 
     // =========================================================================
     // Register addresses
@@ -410,4 +410,7 @@ private:
 
     /** @brief True once the chip has been successfully initialised. */
     bool _initialised;
+
+    /** @brief True if this instance created the I2C bus and must delete it on destruction. */
+    bool _busOwned;
 };

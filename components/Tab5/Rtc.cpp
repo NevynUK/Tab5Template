@@ -90,22 +90,30 @@ Rtc *Rtc::Initialise()
 // Constructor / Destructor
 // =============================================================================
 
-Rtc::Rtc() : _busHandle(nullptr), _deviceHandle(nullptr), _initialised(false)
+Rtc::Rtc() : _busHandle(nullptr), _deviceHandle(nullptr), _initialised(false), _busOwned(false)
 {
-    // Open an I2C master bus on the Tab5 RTC pins.
-    i2c_master_bus_config_t busConfig = {};
-    busConfig.i2c_port = I2C_NUM_0;
-    busConfig.sda_io_num = RTC_SDA_PIN;
-    busConfig.scl_io_num = RTC_SCL_PIN;
-    busConfig.clk_source = I2C_CLK_SRC_DEFAULT;
-    busConfig.glitch_ignore_cnt = 7;
-    busConfig.flags.enable_internal_pullup = true;
-
-    esp_err_t result = i2c_new_master_bus(&busConfig, &_busHandle);
+    // Attempt to reuse the I2C_NUM_1 bus that M5GFX creates during display.init().
+    // IDF v5.x rejects a second i2c_new_master_bus() call on the same port number,
+    // so we retrieve the existing handle when available.
+    esp_err_t result = i2c_master_get_bus_handle(I2C_NUM_1, &_busHandle);
     if (result != ESP_OK)
     {
-        ESP_LOGE(LOG_TAG, "Failed to create I2C master bus: %s", esp_err_to_name(result));
-        return;
+        // Bus not yet claimed — open it ourselves.
+        i2c_master_bus_config_t busConfig = {};
+        busConfig.i2c_port = I2C_NUM_1;
+        busConfig.sda_io_num = RTC_SDA_PIN;
+        busConfig.scl_io_num = RTC_SCL_PIN;
+        busConfig.clk_source = I2C_CLK_SRC_DEFAULT;
+        busConfig.glitch_ignore_cnt = 7;
+        busConfig.flags.enable_internal_pullup = true;
+
+        result = i2c_new_master_bus(&busConfig, &_busHandle);
+        if (result != ESP_OK)
+        {
+            ESP_LOGE(LOG_TAG, "Failed to create I2C master bus: %s", esp_err_to_name(result));
+            return;
+        }
+        _busOwned = true;
     }
 
     // Add the RX8130CE device to the bus.
@@ -140,7 +148,10 @@ Rtc::~Rtc()
 
     if (_busHandle != nullptr)
     {
-        i2c_del_master_bus(_busHandle);
+        if (_busOwned)
+        {
+            i2c_del_master_bus(_busHandle);
+        }
         _busHandle = nullptr;
     }
 

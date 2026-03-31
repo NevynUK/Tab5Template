@@ -12,6 +12,7 @@
 
 #include <M5GFX.h>
 #include <cstdio>
+#include "Rtc.hpp"
 #include "SDCard.hpp"
 #include "Touch.hpp"
 
@@ -102,9 +103,10 @@ void Setup(void)
     // it as a falling-edge interrupt input.
     TouchInput::Initialise(display, OnTouchEvent);
 
-    // Initialise the microSD card before drawing the splash so its status can
-    // be included in a single display update.
+    // Initialise the microSD card and RTC before drawing the splash so their
+    // statuses can be included in a single display update.
     SDCard *sdCard = SDCard::Initialise();
+    Rtc *rtc = Rtc::Initialise();
 
     // -------------------------------------------------------------------------
     // Status splash — drawn once after all hardware is ready.
@@ -117,18 +119,18 @@ void Setup(void)
     const int centreX = display.width() / 2;
     const int centreY = display.height() / 2;
 
-    display.drawString("Tab5 Ready", centreX, centreY - 72);
+    display.drawString("Tab5 Ready", centreX, centreY - 96);
 
     // Touch subsystem status
     if (!display.touch())
     {
         display.setTextColor(TFT_RED, TFT_WHITE);
-        display.drawString("Touch: not found", centreX, centreY - 24);
+        display.drawString("Touch: not found", centreX, centreY - 48);
         display.setTextColor(TFT_BLACK, TFT_WHITE);
     }
     else
     {
-        display.drawString("Touch: OK", centreX, centreY - 24);
+        display.drawString("Touch: OK", centreX, centreY - 48);
     }
 
     // SD card mount status
@@ -140,12 +142,47 @@ void Setup(void)
 
         char sdInfo[64];
         snprintf(sdInfo, sizeof(sdInfo), "SD: %.1f GB  (%s)", sizeGb, card->cid.name);
-        display.drawString(sdInfo, centreX, centreY + 24);
+        display.drawString(sdInfo, centreX, centreY);
     }
     else
     {
         display.setTextColor(TFT_RED, TFT_WHITE);
-        display.drawString("SD card: not found", centreX, centreY + 24);
+        display.drawString("SD card: not found", centreX, centreY);
+        display.setTextColor(TFT_BLACK, TFT_WHITE);
+    }
+
+    // RTC status and current time
+    if (rtc != nullptr)
+    {
+        struct tm setTime = {};
+        setTime.tm_year = 2026 - 1900;
+        setTime.tm_mon = 3 - 1; // March (0-based)
+        setTime.tm_mday = 21;
+        setTime.tm_hour = 14;
+        setTime.tm_min = 42;
+        setTime.tm_sec = 0;
+        setTime.tm_wday = 6; // Saturday
+        setTime.tm_isdst = -1;
+        rtc->SetTime(setTime);
+
+        struct tm currentTime = {};
+        if (rtc->GetTime(currentTime))
+        {
+            char timeInfo[64];
+            snprintf(timeInfo, sizeof(timeInfo), "RTC: %04d-%02d-%02d %02d:%02d:%02d", currentTime.tm_year + 1900, currentTime.tm_mon + 1, currentTime.tm_mday, currentTime.tm_hour, currentTime.tm_min, currentTime.tm_sec);
+            display.drawString(timeInfo, centreX, centreY + 48);
+        }
+        else
+        {
+            display.setTextColor(TFT_RED, TFT_WHITE);
+            display.drawString("RTC: read failed", centreX, centreY + 48);
+            display.setTextColor(TFT_BLACK, TFT_WHITE);
+        }
+    }
+    else
+    {
+        display.setTextColor(TFT_RED, TFT_WHITE);
+        display.drawString("RTC: not found", centreX, centreY + 48);
         display.setTextColor(TFT_BLACK, TFT_WHITE);
     }
 

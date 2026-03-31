@@ -159,8 +159,8 @@ bool Rtc::GetTime(struct tm &time) const
         return (false);
     }
 
-    time.tm_sec  = static_cast<int>(BcdToDec(buffer[0] & 0x7F));
-    time.tm_min  = static_cast<int>(BcdToDec(buffer[1] & 0x7F));
+    time.tm_sec = static_cast<int>(BcdToDec(buffer[0] & 0x7F));
+    time.tm_min = static_cast<int>(BcdToDec(buffer[1] & 0x7F));
     time.tm_hour = static_cast<int>(BcdToDec(buffer[2] & 0x3F));
 
     // Weekday register is one-hot: bit 0 = Sunday, bit 6 = Saturday.
@@ -174,7 +174,7 @@ bool Rtc::GetTime(struct tm &time) const
     time.tm_wday = weekday;
 
     time.tm_mday = static_cast<int>(BcdToDec(buffer[4] & 0x3F));
-    time.tm_mon  = static_cast<int>(BcdToDec(buffer[5] & 0x1F)) - 1;
+    time.tm_mon = static_cast<int>(BcdToDec(buffer[5] & 0x1F)) - 1;
     time.tm_year = static_cast<int>(BcdToDec(buffer[6])) + TM_YEAR_OFFSET_2000;
     time.tm_isdst = -1;
 
@@ -192,7 +192,7 @@ bool Rtc::SetTime(const struct tm &time)
     buffer[0] = DecToBcd(static_cast<uint8_t>(time.tm_sec));
     buffer[1] = DecToBcd(static_cast<uint8_t>(time.tm_min));
     buffer[2] = DecToBcd(static_cast<uint8_t>(time.tm_hour));
-    buffer[3] = static_cast<uint8_t>(1u << time.tm_wday);              // One-hot weekday
+    buffer[3] = static_cast<uint8_t>(1u << time.tm_wday); // One-hot weekday
     buffer[4] = DecToBcd(static_cast<uint8_t>(time.tm_mday));
     buffer[5] = DecToBcd(static_cast<uint8_t>(time.tm_mon + 1));
     buffer[6] = DecToBcd(static_cast<uint8_t>(time.tm_year - TM_YEAR_OFFSET_2000));
@@ -240,12 +240,12 @@ bool Rtc::SetAlarm(const AlarmConfig &config)
     // Build the three alarm register bytes.  Bit 7 = 0 enables matching for
     // that field; bit 7 = 1 disables it.
     uint8_t alarmMinute = DecToBcd(config.minute);
-    uint8_t alarmHour   = DecToBcd(config.hour);
+    uint8_t alarmHour = DecToBcd(config.hour);
     uint8_t alarmDay;
 
     if (config.matchWeekday)
     {
-        alarmDay = static_cast<uint8_t>(1u << config.day);  // One-hot encoding
+        alarmDay = static_cast<uint8_t>(1u << config.day); // One-hot encoding
     }
     else
     {
@@ -265,7 +265,7 @@ bool Rtc::SetAlarm(const AlarmConfig &config)
         alarmDay |= ALARM_DISABLE_BIT;
     }
 
-    uint8_t packet[4] = { REG_ALARM_MIN, alarmMinute, alarmHour, alarmDay };
+    uint8_t packet[4] = {REG_ALARM_MIN, alarmMinute, alarmHour, alarmDay};
 
     esp_err_t result = i2c_master_transmit(_deviceHandle, packet, sizeof(packet), I2C_TIMEOUT_MS);
     return (result == ESP_OK);
@@ -285,13 +285,13 @@ bool Rtc::GetAlarm(AlarmConfig &config) const
         return (false);
     }
 
-    config.matchMinute  = (alarmBuffer[0] & ALARM_DISABLE_BIT) == 0;
-    config.matchHour    = (alarmBuffer[1] & ALARM_DISABLE_BIT) == 0;
-    config.matchDay     = (alarmBuffer[2] & ALARM_DISABLE_BIT) == 0;
+    config.matchMinute = (alarmBuffer[0] & ALARM_DISABLE_BIT) == 0;
+    config.matchHour = (alarmBuffer[1] & ALARM_DISABLE_BIT) == 0;
+    config.matchDay = (alarmBuffer[2] & ALARM_DISABLE_BIT) == 0;
     config.matchWeekday = (extensionReg & EXT_WADA) == 0;
 
     config.minute = BcdToDec(alarmBuffer[0] & 0x7F);
-    config.hour   = BcdToDec(alarmBuffer[1] & 0x7F);
+    config.hour = BcdToDec(alarmBuffer[1] & 0x7F);
 
     if (config.matchWeekday)
     {
@@ -337,9 +337,7 @@ bool Rtc::EnableAlarmInterrupt(bool enable)
 // Wakeup timer
 // =============================================================================
 
-bool Rtc::StartWakeupTimer(uint16_t countdownValue,
-                            TimerClockSource clockSource,
-                            bool enableInterrupt)
+bool Rtc::StartWakeupTimer(uint16_t countdownValue, TimerClockSource clockSource, bool enableInterrupt)
 {
     // Stop the timer before modifying its registers.
     uint8_t extensionReg = 0;
@@ -355,9 +353,9 @@ bool Rtc::StartWakeupTimer(uint16_t countdownValue,
     }
 
     // Write the 16-bit countdown value (little-endian: L byte then H byte).
-    const uint8_t timerLow  = static_cast<uint8_t>(countdownValue & 0xFF);
+    const uint8_t timerLow = static_cast<uint8_t>(countdownValue & 0xFF);
     const uint8_t timerHigh = static_cast<uint8_t>((countdownValue >> 8) & 0xFF);
-    uint8_t timerPacket[3] = { REG_TIMER_LOW, timerLow, timerHigh };
+    uint8_t timerPacket[3] = {REG_TIMER_LOW, timerLow, timerHigh};
 
     esp_err_t result = i2c_master_transmit(_deviceHandle, timerPacket, sizeof(timerPacket), I2C_TIMEOUT_MS);
     if (result != ESP_OK)
@@ -447,18 +445,14 @@ bool Rtc::ClearFlags(StatusFlags flags)
 
 bool Rtc::WriteRegister(uint8_t registerAddress, uint8_t value) const
 {
-    uint8_t packet[2] = { registerAddress, value };
+    uint8_t packet[2] = {registerAddress, value};
     esp_err_t result = i2c_master_transmit(_deviceHandle, packet, sizeof(packet), I2C_TIMEOUT_MS);
     return (result == ESP_OK);
 }
 
 bool Rtc::ReadRegisters(uint8_t registerAddress, uint8_t *buffer, size_t length) const
 {
-    esp_err_t result = i2c_master_transmit_receive(
-        _deviceHandle,
-        &registerAddress, 1,
-        buffer, length,
-        I2C_TIMEOUT_MS);
+    esp_err_t result = i2c_master_transmit_receive(_deviceHandle, &registerAddress, 1, buffer, length, I2C_TIMEOUT_MS);
     return (result == ESP_OK);
 }
 
@@ -516,11 +510,11 @@ bool Rtc::PerformStartup()
         // Software reset sequence from the RX8130CE datasheet / application note.
         WriteRegister(REG_CONTROL0, 0x00);
         WriteRegister(REG_CONTROL0, CTRL0_STOP);
-        WriteRegister(0x50, 0x6C);  // Undocumented internal reset register
-        WriteRegister(0x53, 0x01);  // Undocumented internal reset register
-        WriteRegister(0x66, 0x03);  // Undocumented internal reset register
-        WriteRegister(0x6B, 0x02);  // Undocumented internal reset register
-        WriteRegister(0x6B, 0x01);  // Undocumented internal reset register
+        WriteRegister(0x50, 0x6C); // Undocumented internal reset register
+        WriteRegister(0x53, 0x01); // Undocumented internal reset register
+        WriteRegister(0x66, 0x03); // Undocumented internal reset register
+        WriteRegister(0x6B, 0x02); // Undocumented internal reset register
+        WriteRegister(0x6B, 0x01); // Undocumented internal reset register
 
         vTaskDelay(pdMS_TO_TICKS(RESET_WAIT_MS));
 

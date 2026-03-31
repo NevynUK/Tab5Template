@@ -92,8 +92,7 @@ public:
     /**
      * @brief Wakeup-timer clock source selection (TSEL bits).
      */
-    enum class TimerClockSource : uint8_t
-    {
+    enum class TimerClockSource : uint8_t {
         /** @brief 4096 Hz — smallest period, highest resolution. */
         Hz4096 = 0x00,
 
@@ -251,9 +250,7 @@ public:
      * @param enableInterrupt   true to assert /IRQ when the counter reaches zero.
      * @return true on success.
      */
-    bool StartWakeupTimer(uint16_t countdownValue,
-                          TimerClockSource clockSource,
-                          bool enableInterrupt);
+    bool StartWakeupTimer(uint16_t countdownValue, TimerClockSource clockSource, bool enableInterrupt);
 
     /**
      * @brief Stops the wakeup timer and disables its interrupt.

@@ -35,18 +35,16 @@
  * @param wday   Day of week (0 = Sunday, 6 = Saturday).
  * @return Populated struct tm.
  */
-static struct tm MakeTime(int year, int month, int day,
-                           int hour, int minute, int second,
-                           int wday)
+static struct tm MakeTime(int year, int month, int day, int hour, int minute, int second, int wday)
 {
     struct tm time = {};
-    time.tm_year  = year - 1900;
-    time.tm_mon   = month - 1;
-    time.tm_mday  = day;
-    time.tm_hour  = hour;
-    time.tm_min   = minute;
-    time.tm_sec   = second;
-    time.tm_wday  = wday;
+    time.tm_year = year - 1900;
+    time.tm_mon = month - 1;
+    time.tm_mday = day;
+    time.tm_hour = hour;
+    time.tm_min = minute;
+    time.tm_sec = second;
+    time.tm_wday = wday;
     time.tm_isdst = -1;
     return (time);
 }
@@ -95,16 +93,15 @@ static void TestRtcSetAndGetTimeRoundTrip(void)
     TEST_ASSERT_TRUE_MESSAGE(readOk, "GetTime() must return true");
 
     TEST_ASSERT_EQUAL_INT_MESSAGE(written.tm_year, read.tm_year, "Year must match");
-    TEST_ASSERT_EQUAL_INT_MESSAGE(written.tm_mon,  read.tm_mon,  "Month must match");
+    TEST_ASSERT_EQUAL_INT_MESSAGE(written.tm_mon, read.tm_mon, "Month must match");
     TEST_ASSERT_EQUAL_INT_MESSAGE(written.tm_mday, read.tm_mday, "Day must match");
     TEST_ASSERT_EQUAL_INT_MESSAGE(written.tm_hour, read.tm_hour, "Hour must match");
-    TEST_ASSERT_EQUAL_INT_MESSAGE(written.tm_min,  read.tm_min,  "Minute must match");
+    TEST_ASSERT_EQUAL_INT_MESSAGE(written.tm_min, read.tm_min, "Minute must match");
     TEST_ASSERT_EQUAL_INT_MESSAGE(written.tm_wday, read.tm_wday, "Weekday must match");
 
     // Seconds advance after SetTime so only verify they are in a plausible
     // range (0–5) rather than an exact value.
-    TEST_ASSERT_INT_WITHIN_MESSAGE(5, 0, read.tm_sec,
-                                   "Seconds must be within 5 of zero after 1.2 s");
+    TEST_ASSERT_INT_WITHIN_MESSAGE(5, 0, read.tm_sec, "Seconds must be within 5 of zero after 1.2 s");
 }
 
 /**
@@ -134,13 +131,11 @@ static void TestRtcTimeAdvancesCorrectly(void)
     TEST_ASSERT_TRUE_MESSAGE(readOk, "GetTime() must return true");
 
     TEST_ASSERT_EQUAL_INT_MESSAGE(written.tm_year, read.tm_year, "Year must be unchanged");
-    TEST_ASSERT_EQUAL_INT_MESSAGE(written.tm_mon,  read.tm_mon,  "Month must be unchanged");
+    TEST_ASSERT_EQUAL_INT_MESSAGE(written.tm_mon, read.tm_mon, "Month must be unchanged");
     TEST_ASSERT_EQUAL_INT_MESSAGE(written.tm_mday, read.tm_mday, "Day must be unchanged");
     TEST_ASSERT_EQUAL_INT_MESSAGE(written.tm_hour, read.tm_hour, "Hour must be unchanged");
-    TEST_ASSERT_EQUAL_INT_MESSAGE(written.tm_min + 1, read.tm_min,
-                                  "Minute must have incremented by 1");
-    TEST_ASSERT_INT_WITHIN_MESSAGE(2, 2, read.tm_sec,
-                                   "Seconds should be approximately 2 after crossing minute boundary");
+    TEST_ASSERT_EQUAL_INT_MESSAGE(written.tm_min + 1, read.tm_min, "Minute must have incremented by 1");
+    TEST_ASSERT_INT_WITHIN_MESSAGE(2, 2, read.tm_sec, "Seconds should be approximately 2 after crossing minute boundary");
 }
 
 /**
@@ -171,10 +166,10 @@ static void TestRtcYearBoundariesRoundTrip(void)
     struct tm read2099 = {};
     TEST_ASSERT_TRUE_MESSAGE(rtc->GetTime(read2099), "GetTime after year-2099 set must return true");
     TEST_ASSERT_EQUAL_INT_MESSAGE(year2099.tm_year, read2099.tm_year, "Year 2099 must round-trip");
-    TEST_ASSERT_EQUAL_INT_MESSAGE(year2099.tm_mon,  read2099.tm_mon,  "Month 12 must round-trip");
+    TEST_ASSERT_EQUAL_INT_MESSAGE(year2099.tm_mon, read2099.tm_mon, "Month 12 must round-trip");
     TEST_ASSERT_EQUAL_INT_MESSAGE(year2099.tm_mday, read2099.tm_mday, "Day 31 must round-trip");
     TEST_ASSERT_EQUAL_INT_MESSAGE(year2099.tm_hour, read2099.tm_hour, "Hour 23 must round-trip");
-    TEST_ASSERT_EQUAL_INT_MESSAGE(year2099.tm_min,  read2099.tm_min,  "Minute 59 must round-trip");
+    TEST_ASSERT_EQUAL_INT_MESSAGE(year2099.tm_min, read2099.tm_min, "Minute 59 must round-trip");
 }
 
 /**

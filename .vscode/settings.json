@@ -43,5 +43,6 @@
     "idf.flashType": "UART",
     "cSpell.words": [
         "lvgl"
-    ]
+    ],
+    "idf.currentSetup": "/Users/markstevens/.espressif/v6.0/esp-idf"
 }

@@ -61,8 +61,7 @@ static void TestSDCardWriteAndReadBackMatches(void)
     fgets(buffer, static_cast<int>(sizeof(buffer)), file);
     fclose(file);
 
-    TEST_ASSERT_EQUAL_STRING_MESSAGE(TEST_WRITE_CONTENT, buffer,
-                                     "Read content must match written content");
+    TEST_ASSERT_EQUAL_STRING_MESSAGE(TEST_WRITE_CONTENT, buffer, "Read content must match written content");
     remove(TEST_FILE_PATH);
 }
 
@@ -98,10 +97,8 @@ static void TestSDCardAppendModeAddsContent(void)
     firstLine[strcspn(firstLine, "\n")] = '\0';
     secondLine[strcspn(secondLine, "\n")] = '\0';
 
-    TEST_ASSERT_EQUAL_STRING_MESSAGE(TEST_WRITE_CONTENT, firstLine,
-                                     "First line must match initial write content");
-    TEST_ASSERT_EQUAL_STRING_MESSAGE(TEST_APPEND_CONTENT, secondLine,
-                                     "Second line must match appended content");
+    TEST_ASSERT_EQUAL_STRING_MESSAGE(TEST_WRITE_CONTENT, firstLine, "First line must match initial write content");
+    TEST_ASSERT_EQUAL_STRING_MESSAGE(TEST_APPEND_CONTENT, secondLine, "Second line must match appended content");
     remove(TEST_FILE_PATH);
 }
 

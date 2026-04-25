@@ -15,9 +15,13 @@
 #include "Rtc.hpp"
 #include "SDCard.hpp"
 #include "Touch.hpp"
+#include "Coprocessor.hpp"
+#include "WiFi.hpp"
 
 /** Global display instance. */
 M5GFX display;
+
+const char *LOG_TAG = "Tab5Template";
 
 /**
  * @brief Touch event callback.
@@ -189,11 +193,24 @@ void Setup(void)
     display.endWrite();
     display.display();
     display.setTextColor(TFT_WHITE, TFT_BLACK);
+
+    Coprocessor::Initialise();
+    WiFi::Initialise();
 }
 
 extern "C" void app_main(void)
 {
     Setup();
+
+    while (true)
+    {
+        std::vector<AccessPointInfo> accessPoints = WiFi::ScanForAccessPoints();
+        for (auto &ap: accessPoints)
+        {
+            ESP_LOGI(LOG_TAG, "Found WiFi network: SSID='%s', Signal=%d dBm, Channel=%d, Hidden=%s", ap.ssid.c_str(), ap.signalStrength, ap.channel, ap.hidden ? "yes" : "no");
+        }
+        vTaskDelay(pdMS_TO_TICKS(5000));
+    }
 
     // All work is performed by the TouchInput FreeRTOS task.
     // Deleting this task frees its stack and TCB immediately rather than

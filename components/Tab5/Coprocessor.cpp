@@ -18,7 +18,7 @@
 #include <esp_netif.h>
 #include <nvs_flash.h>
 
-/** 
+/**
  * @brief Logging tag used for all ESP-IDF log output from this module.
  */
 static constexpr const char *LOG_TAG = "Coprocessor";

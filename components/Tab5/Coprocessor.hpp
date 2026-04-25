@@ -20,7 +20,7 @@
  *
  * The ESP32-C6 must be pre-flashed with the ESP Hosted slave firmware before
  * this class is used.
- * 
+ *
  * SDIO GPIO assignments for ESP32-P4 → ESP32-C6 connection.
  * These are configured in sdkconfig.defaults and used by the ESP Hosted
  * library internally.  Documented here for reference.

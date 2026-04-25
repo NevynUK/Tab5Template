@@ -22,7 +22,7 @@
  */
 static constexpr const char *LOG_TAG = "WiFi";
 
-/** 
+/**
  * @brief Initialise the static singleton pointer to null.
  */
 WiFi *WiFi::_instance = nullptr;

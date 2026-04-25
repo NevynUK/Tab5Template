@@ -35,7 +35,11 @@ Tab5Template/
 │   └── CMakeLists.txt                # Registers Tab5Template.cpp; requires Tab5, m5unified, m5gfx
 ├── components/
 │   └── Tab5/
-│       ├── CMakeLists.txt            # Registers Tab5 component; requires m5gfx, driver, freertos, sdmmc, fatfs, esp_driver_i2c
+│       ├── CMakeLists.txt            # Registers Tab5 component; requires m5gfx, driver, freertos, sdmmc, fatfs, esp_driver_i2c, esp_hosted, esp_wifi, esp_netif, nvs_flash
+│       ├── Coprocessor.hpp           # Coprocessor singleton — ESP32-C6 init via ESP Hosted SDIO
+│       ├── Coprocessor.cpp
+│       ├── WiFi.hpp                  # WiFi singleton — access point scan and future WiFi actions
+│       ├── WiFi.cpp
 │       ├── Touch.hpp                 # TouchInput singleton — interrupt-driven touch input
 │       ├── Touch.cpp
 │       ├── SDCard.hpp                # SDCard singleton — SDMMC 4-bit microSD mount
@@ -315,6 +319,71 @@ The project uses the following language versions:
 - Use spaces after casts
 - Prefer `char *variable` over `char* variable` for pointer declarations
 - Prefer `char &variable` over `char& variable` for reference declarations
+
+---
+
+## Coprocessor API (`components/Tab5/`)
+
+`Coprocessor` is a singleton class that initialises the **ESP32-C6** as a WiFi/BT coprocessor.
+
+| Item | Value |
+|---|---|
+| Transport | SDIO (SDMMC slot 1) |
+| SDIO CLK | GPIO 12 |
+| SDIO CMD | GPIO 13 |
+| SDIO D0–D3 | GPIO 11, 10, 9, 8 |
+| ESP32-C6 Reset | GPIO 15 (active-low) |
+| Managed component | `espressif/esp_hosted` |
+
+- Initialises NVS flash, TCP/IP stack, and the default event loop.
+- Asserts a hardware reset on the ESP32-C6 before starting SDIO enumeration.
+- Calls `esp_hosted_init()` to bring up the ESP Hosted transport.
+- After successful init, standard `esp_wifi_*` APIs route through the ESP32-C6.
+
+```cpp
+// Typical usage (must be called before WiFi::Initialise())
+Coprocessor *coprocessor = Coprocessor::Initialise();
+if (coprocessor != nullptr && coprocessor->IsInitialised())
+{
+    // ESP32-C6 is ready; proceed with WiFi::Initialise()
+}
+```
+
+**Key constraints:**
+- The ESP32-C6 must be pre-flashed with the ESP Hosted slave firmware.
+- `Coprocessor::Initialise()` must be called **before** `WiFi::Initialise()`.
+- SDIO uses SDMMC slot 1; the microSD card uses slot 0 — they are independent.
+
+---
+
+## WiFi API (`components/Tab5/`)
+
+`WiFi` is a singleton class that provides WiFi functionality via the ESP32-C6 coprocessor.
+
+- Initialises the WiFi driver in station mode via `esp_wifi_init()`.
+- `ScanForAccessPoints()` performs a blocking active scan and returns all networks found.
+- Hidden networks are included in results with an empty `ssid` field.
+
+```cpp
+// Typical usage
+WiFi *wifi = WiFi::Initialise();
+if (wifi != nullptr)
+{
+    std::vector<AccessPointInfo> accessPoints = wifi->ScanForAccessPoints();
+    for (const AccessPointInfo &ap : accessPoints)
+    {
+        printf("SSID: %s  RSSI: %d dBm  Channel: %d  Hidden: %s\n",
+               ap.hidden ? "<hidden>" : ap.ssid.c_str(),
+               ap.signalStrength,
+               ap.channel,
+               ap.hidden ? "yes" : "no");
+    }
+}
+```
+
+**Key constraints:**
+- `Coprocessor::Initialise()` must succeed before calling `WiFi::Initialise()`.
+- `ScanForAccessPoints()` is blocking; call from a FreeRTOS task, not from a callback.
 
 ---
 

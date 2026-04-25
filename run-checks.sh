@@ -24,6 +24,7 @@ esac
 
 VERBOSE_FLAGS=
 HELP=false
+REFORMAT=false
 
 #
 #   Work out which options are on the command line.
@@ -36,6 +37,9 @@ case $i in
     ;;
     -h|--help)
     HELP=true
+    ;;
+    --reformat)
+    REFORMAT=true
     ;;
     *)
     printf "Unknown command line option ($i)."
@@ -51,6 +55,7 @@ if $HELP; then
     echo "Options:"
     echo "-h | --help             Display this message"
     echo "-v | --verbose          Execute in verbose mode (useful for debugging)"
+    echo "     --reformat         Reformat the codebase using clang-format"
     echo ""
     exit 0
 fi
@@ -59,10 +64,24 @@ fi
 SOURCE_DIR=$scriptdir
 COMPONENTS_DIR=$SOURCE_DIR/components
 
-echo "Running cppcheck"
+if ! $REFORMAT; then
+    echo "Running cppcheck"
+    cppcheck --error-exitcode=1 --quiet --check-level=exhaustive --force --inline-suppr -iCMakeLists.txt -imanaged_components -ibuild .
+fi
 
-cppcheck --error-exitcode=1 --quiet --check-level=exhaustive --force --inline-suppr -iCMakeLists.txt -imanaged_components -ibuild .
+if $REFORMAT; then
+    CLANG_FORMAT_OPTS="-i"
+    echo "Reformatting code with clang-format"
+else
+    CLANG_FORMAT_OPTS="--dry-run --Werror"
+    echo "Running clang-format check"
+fi
 
-echo "Running clang-format"
-clang-format --dry-run --Werror $VERBOSE_FLAGS $SOURCE_DIR/main/*.?pp
-clang-format --dry-run --Werror $VERBOSE_FLAGS $COMPONENTS_DIR/Tab5/*.?pp
+clang-format $CLANG_FORMAT_OPTS $VERBOSE_FLAGS $SOURCE_DIR/main/*.?pp
+
+find "$scriptdir/tests" -name "*.cpp" -o -name "*.hpp" -o -name "*.c" -o -name "*.h" | xargs clang-format $CLANG_FORMAT_OPTS $VERBOSE_FLAGS
+find "$scriptdir/components" -name "*.cpp" -o -name "*.hpp" -o -name "*.c" -o -name "*.h" | xargs clang-format $CLANG_FORMAT_OPTS $VERBOSE_FLAGS
+
+now=$(date +"%T")
+printf "Script completed at $now\n"
+

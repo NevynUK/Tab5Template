@@ -17,6 +17,7 @@
 #include "Touch.hpp"
 #include "Coprocessor.hpp"
 #include "WiFi.hpp"
+#include "Console.hpp"
 
 /** Global display instance. */
 M5GFX display;
@@ -184,6 +185,7 @@ void Setup(void)
         }
     }
     else
+
     {
         display.setTextColor(TFT_RED, TFT_WHITE);
         display.drawString("RTC: not found", centreX, centreY + 48);
@@ -202,11 +204,15 @@ extern "C" void app_main(void)
 {
     Setup();
 
+    Console console(display, 10, 10, 600, 400); // white border/text by default
+    console.Printf("Boot complete, free heap: %lu", esp_get_free_heap_size());
+    console.Println("Scanning WiFi...");
     while (true)
     {
         std::vector<AccessPointInfo> accessPoints = WiFi::ScanForAccessPoints();
         for (auto &ap: accessPoints)
         {
+            console.Printf("Found WiFi network: SSID='%s', Signal=%d dBm, Channel=%d, Hidden=%s", ap.ssid.c_str(), ap.signalStrength, ap.channel, ap.hidden ? "yes" : "no");
             ESP_LOGI(LOG_TAG, "Found WiFi network: SSID='%s', Signal=%d dBm, Channel=%d, Hidden=%s", ap.ssid.c_str(), ap.signalStrength, ap.channel, ap.hidden ? "yes" : "no");
         }
         vTaskDelay(pdMS_TO_TICKS(5000));

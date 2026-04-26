@@ -15,21 +15,7 @@
 #include <cstdarg>
 #include <cstdio>
 
-Console::Console(M5GFX &display,
-                 int32_t x,
-                 int32_t y,
-                 int32_t width,
-                 int32_t height,
-                 uint32_t borderColour,
-                 uint32_t textColour)
-    : _display(display),
-      _x(x),
-      _y(y),
-      _width(width),
-      _height(height),
-      _borderColour(borderColour),
-      _textColour(textColour),
-      _mutex(nullptr)
+Console::Console(M5GFX &display, int32_t x, int32_t y, int32_t width, int32_t height, uint32_t borderColour, uint32_t textColour) : _display(display), _x(x), _y(y), _width(width), _height(height), _borderColour(borderColour), _textColour(textColour), _mutex(nullptr)
 {
     _mutex = xSemaphoreCreateMutex();
 
@@ -116,8 +102,7 @@ void Console::Redraw(bool scrolled)
         // Shift all existing lines up by one line height in the framebuffer,
         // then only clear and draw the new bottom line.
         const int32_t shiftHeight = (lineCount - 1) * _lineHeight;
-        _display.copyRect(interiorX, interiorY + PADDING, interiorWidth, shiftHeight,
-                          interiorX, interiorY + PADDING + _lineHeight);
+        _display.copyRect(interiorX, interiorY + PADDING, interiorWidth, shiftHeight, interiorX, interiorY + PADDING + _lineHeight);
         _display.fillRect(interiorX, lastLineY, interiorWidth, _lineHeight, TFT_BLACK);
     }
 

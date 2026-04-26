@@ -204,7 +204,7 @@ extern "C" void app_main(void)
 {
     Setup();
 
-    Console console(display, 10, 10, 600, 400);  // white border/text by default
+    Console console(display, 10, 10, 600, 400); // white border/text by default
     console.Printf("Boot complete, free heap: %lu", esp_get_free_heap_size());
     console.Println("Scanning WiFi...");
     while (true)

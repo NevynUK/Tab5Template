@@ -58,13 +58,7 @@ public:
      * @param borderColour  Colour of the one-pixel border (default TFT_WHITE).
      * @param textColour    Colour of the text (default TFT_WHITE).
      */
-    Console(M5GFX &display,
-            int32_t x,
-            int32_t y,
-            int32_t width,
-            int32_t height,
-            uint32_t borderColour = TFT_WHITE,
-            uint32_t textColour = TFT_WHITE);
+    Console(M5GFX &display, int32_t x, int32_t y, int32_t width, int32_t height, uint32_t borderColour = TFT_WHITE, uint32_t textColour = TFT_WHITE);
 
     /**
      * @brief Destructor.

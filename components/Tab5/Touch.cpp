@@ -8,21 +8,39 @@
  * Copyright   : Copyright (c) 2026 Mark Stevens
  * Licence     : MIT — see LICENSE in the repository root for full terms.
  * Target      : M5Stack Tab5 (ESP32-P4)
- * Build system: ESP-IDF v5.5.3
  *---------------------------------------------------------------------------*/
 
 #include "Touch.hpp"
 
 #include <algorithm>
 
-/** Initialise the static singleton pointer to null. */
+/** 
+ * @brief Initialise the static singleton pointer to null.
+ */
 TouchInput *TouchInput::_instance = nullptr;
 
+/**
+ * @brief Returns the existing singleton instance.
+ *
+ * @return Pointer to the singleton, or nullptr if Initialise() has not
+ *         yet been called.
+ */
 TouchInput *TouchInput::GetInstance()
 {
     return (_instance);
 }
 
+/**
+ * @brief Creates and initialises the singleton with no registered callback.
+ *
+ * Acts as the default-constructor role for the singleton.  Must be called
+ * after display.init().
+ *
+ * @param display  Reference to the global M5GFX display instance used to
+ *                 read and convert raw touch data.
+ * @return Pointer to the newly created singleton, or nullptr if the
+ *         singleton already exists.
+ */
 TouchInput *TouchInput::Initialise(M5GFX &display)
 {
     if (_instance != nullptr)
@@ -34,6 +52,18 @@ TouchInput *TouchInput::Initialise(M5GFX &display)
     return (_instance);
 }
 
+/**
+ * @brief Creates and initialises the singleton with one pre-registered callback.
+ *
+ * Acts as the overloaded-constructor role for the singleton.  Must be
+ * called after display.init().
+ *
+ * @param display   Reference to the global M5GFX display instance.
+ * @param callback  Function invoked on every touch event.  Must not be
+ *                  nullptr.
+ * @return Pointer to the newly created singleton, or nullptr if the
+ *         singleton already exists.
+ */
 TouchInput *TouchInput::Initialise(M5GFX &display, TouchCallback callback)
 {
     TouchInput *instance = Initialise(display);
@@ -46,6 +76,14 @@ TouchInput *TouchInput::Initialise(M5GFX &display, TouchCallback callback)
     return (instance);
 }
 
+/**
+ * @brief Private constructor — use Initialise() to create the singleton.
+ *
+ * Configures the GPIO interrupt, installs the ISR, creates the binary
+ * semaphore and mutex, and spawns the touch processing task.
+ *
+ * @param display  Reference to the global M5GFX display instance.
+ */
 TouchInput::TouchInput(M5GFX &display) : _display(display), _semaphore(nullptr), _taskHandle(nullptr), _callbackMutex(nullptr)
 {
     _semaphore = xSemaphoreCreateBinary();
@@ -65,6 +103,13 @@ TouchInput::TouchInput(M5GFX &display) : _display(display), _semaphore(nullptr),
     xTaskCreate(Task, "TouchTask", TOUCH_TASK_STACK_SIZE, this, TOUCH_TASK_PRIORITY, &_taskHandle);
 }
 
+/**
+ * @brief Destructor.
+ *
+ * Removes the GPIO ISR handler, deletes the FreeRTOS task and both
+ * semaphores, clears the callback list, and resets the singleton pointer
+ * so that Initialise() may be called again.
+ */
 TouchInput::~TouchInput()
 {
     gpio_isr_handler_remove(TOUCH_INTERRUPT_PIN);
@@ -90,6 +135,14 @@ TouchInput::~TouchInput()
     _instance = nullptr;
 }
 
+/**
+ * @brief Registers a callback to receive touch events.
+ *
+ * Thread-safe.  Has no effect if callback is nullptr or already
+ * registered.
+ *
+ * @param callback  Non-null function pointer to register.
+ */
 void TouchInput::AddCallback(TouchCallback callback)
 {
     if (callback == nullptr)
@@ -108,6 +161,13 @@ void TouchInput::AddCallback(TouchCallback callback)
     xSemaphoreGive(_callbackMutex);
 }
 
+/**
+ * @brief Removes a previously registered callback.
+ *
+ * Thread-safe.  Has no effect if callback is not currently registered.
+ *
+ * @param callback  Function pointer to remove.
+ */
 void TouchInput::RemoveCallback(TouchCallback callback)
 {
     xSemaphoreTake(_callbackMutex, portMAX_DELAY);
@@ -121,6 +181,14 @@ void TouchInput::RemoveCallback(TouchCallback callback)
     xSemaphoreGive(_callbackMutex);
 }
 
+/**
+ * @brief ISR fired on the falling edge of TOUCH_INTERRUPT_PIN.
+ *
+ * Gives _semaphore from interrupt context to unblock the touch task.
+ * Must be placed in IRAM.
+ *
+ * @param arg  Pointer to the TouchInput singleton instance.
+ */
 void IRAM_ATTR TouchInput::InterruptHandler(void *arg)
 {
     TouchInput *instance = static_cast<TouchInput *>(arg);
@@ -129,6 +197,14 @@ void IRAM_ATTR TouchInput::InterruptHandler(void *arg)
     portYIELD_FROM_ISR(higherPriorityTaskWoken);
 }
 
+/**
+ * @brief FreeRTOS task entry point for touch event processing.
+ *
+ * Blocks on _semaphore, reads raw touch data, converts to screen
+ * co-ordinates, then invokes all registered callbacks with the result.
+ *
+ * @param parameter  Pointer to the TouchInput singleton instance.
+ */
 void TouchInput::Task(void *parameter)
 {
     TouchInput *instance = static_cast<TouchInput *>(parameter);

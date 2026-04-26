@@ -7,7 +7,6 @@
  * Copyright   : Copyright (c) 2026 Mark Stevens
  * Licence     : MIT — see LICENSE in the repository root for full terms.
  * Target      : M5Stack Tab5 (ESP32-P4)
- * Build system: ESP-IDF v5.5.1
  *---------------------------------------------------------------------------*/
 
 #include "Console.hpp"
@@ -15,6 +14,21 @@
 #include <cstdarg>
 #include <cstdio>
 
+/**
+ * @brief Constructs and draws the console on the display.
+ *
+ * Calculates the maximum number of visible lines from the console height
+ * and the Font4 line height, draws the border, fills the interior black,
+ * and flushes the framebuffer.
+ *
+ * @param display       Reference to the global M5GFX display instance.
+ * @param x             Left edge of the console in display co-ordinates.
+ * @param y             Top edge of the console in display co-ordinates.
+ * @param width         Total width of the console including the border.
+ * @param height        Total height of the console including the border.
+ * @param borderColour  Colour of the one-pixel border (default TFT_WHITE).
+ * @param textColour    Colour of the text (default TFT_WHITE).
+ */
 Console::Console(M5GFX &display, int32_t x, int32_t y, int32_t width, int32_t height, uint32_t borderColour, uint32_t textColour) : _display(display), _x(x), _y(y), _width(width), _height(height), _borderColour(borderColour), _textColour(textColour), _mutex(nullptr)
 {
     _mutex = xSemaphoreCreateMutex();
@@ -29,6 +43,11 @@ Console::Console(M5GFX &display, int32_t x, int32_t y, int32_t width, int32_t he
     _display.display();
 }
 
+/**
+ * @brief Destructor.
+ *
+ * Deletes the mutex and releases all resources.
+ */
 Console::~Console()
 {
     if (_mutex != nullptr)
@@ -38,6 +57,15 @@ Console::~Console()
     }
 }
 
+/**
+ * @brief Appends a line of text to the console.
+ *
+ * If the console is full the oldest line is removed before the new line is
+ * appended.  The interior is then redrawn and the framebuffer is flushed.
+ * Thread-safe.
+ *
+ * @param text  The line of text to display.
+ */
 void Console::Println(const std::string &text)
 {
     xSemaphoreTake(_mutex, portMAX_DELAY);
@@ -55,6 +83,14 @@ void Console::Println(const std::string &text)
     xSemaphoreGive(_mutex);
 }
 
+/**
+ * @brief Appends a formatted line of text to the console.
+ *
+ * Formats the string using printf-style format specifiers and then calls
+ * Println().  Thread-safe.
+ *
+ * @param format  printf-style format string followed by optional arguments.
+ */
 void Console::Printf(const char *format, ...)
 {
     char buffer[PRINTF_BUFFER_SIZE];
@@ -67,6 +103,11 @@ void Console::Printf(const char *format, ...)
     Println(std::string(buffer));
 }
 
+/**
+ * @brief Removes all lines from the console and redraws the empty interior.
+ *
+ * Thread-safe.
+ */
 void Console::Clear()
 {
     xSemaphoreTake(_mutex, portMAX_DELAY);
@@ -81,6 +122,18 @@ void Console::Clear()
     xSemaphoreGive(_mutex);
 }
 
+/**
+ * @brief Draws a new line onto the display with minimal pixel updates.
+ *
+ * When scrolled is false the console was not yet full and only the new
+ * last line is drawn.  When scrolled is true the existing content is
+ * shifted up by one line height using copyRect, the last line area is
+ * cleared, and the new last line is drawn.  Must be called with _mutex
+ * held.
+ *
+ * @param scrolled  True if a line was discarded to make room (scroll
+ *                  occurred), false if the line was simply appended.
+ */
 void Console::Redraw(bool scrolled)
 {
     const int32_t interiorX = _x + 1;

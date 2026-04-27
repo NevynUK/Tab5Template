@@ -270,7 +270,6 @@ Every `.cpp` and `.hpp` file must begin with a block comment containing:
  * Copyright   : Copyright (c) 2026 Mark Stevens
  * Licence     : MIT — see LICENSE in the repository root for full terms.
  * Target      : M5Stack Tab5 (ESP32-P4)
- * Build system: ESP-IDF v5.5.1
  *---------------------------------------------------------------------------*/
 ```
 

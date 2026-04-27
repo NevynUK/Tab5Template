@@ -8,30 +8,50 @@
  * Copyright   : Copyright (c) 2026 Mark Stevens
  * Licence     : MIT — see LICENSE in the repository root for full terms.
  * Target      : M5Stack Tab5 (ESP32-P4)
- * Build system: ESP-IDF v5.5.1
  *---------------------------------------------------------------------------*/
-
 #include "SDCard.hpp"
 
-#include <cstring>
+#include <esp_check.h>
+#include <esp_err.h>
 #include <esp_log.h>
 #include <esp_ldo_regulator.h>
 
-/** @brief Logging tag used for all ESP-IDF log output from this module. */
+/**
+ * @brief Logging tag used for all ESP-IDF log output from this module.
+ */
 static constexpr const char *LOG_TAG = "SDCard";
 
-/** @brief Initialise the static singleton pointer to null. */
+/**
+ * Initialise the static singleton pointer to null.
+ */
 SDCard *SDCard::_instance = nullptr;
 
 // -----------------------------------------------------------------------------
 // Public static interface
 // -----------------------------------------------------------------------------
 
+/**
+ * @brief Returns the existing singleton instance.
+ *
+ * @return Pointer to the singleton, or nullptr if Initialise() has not
+ *         yet been called.
+ */
 SDCard *SDCard::GetInstance()
 {
     return (_instance);
 }
 
+/**
+ * @brief Creates and initialises the singleton.
+ *
+ * Acquires the on-chip LDO (channel 4), mounts the SD card via the
+ * SDMMC host in 4-bit mode, and registers the FAT filesystem at
+ * MOUNT_POINT.  If no card is present, or if the mount fails, the
+ * singleton is still created but IsMounted() returns false.
+ *
+ * @return Pointer to the newly created singleton, or nullptr if the
+ *         singleton already exists.
+ */
 SDCard *SDCard::Initialise()
 {
     if (_instance != nullptr)
@@ -47,6 +67,30 @@ SDCard *SDCard::Initialise()
 // Constructor / Destructor
 // -----------------------------------------------------------------------------
 
+/**
+ * @brief Singleton for the M5Stack Tab5 microSD card slot.
+ *
+ * Initialises the on-chip LDO (channel 4) that powers the SD card slot,
+ * configures the SDMMC host in 4-bit mode on the Tab5's dedicated GPIO
+ * pins, and mounts a FAT filesystem to the virtual file system at
+ * MOUNT_POINT ("/sdcard").  After a successful Initialise() call the
+ * standard C file I/O functions (fopen, fread, fwrite, etc.) may be used
+ * with paths prefixed by "/sdcard/".
+ *
+ * @note Only one instance may exist at a time.  Calling Initialise() when
+ *       the singleton already exists returns nullptr.
+ *
+ * @note If no card is inserted, Initialise() still returns a valid pointer
+ *       but IsMounted() returns false.  The caller must check IsMounted()
+ *       before attempting any file operations.
+ */
+
+/**
+ * @brief Private constructor — use Initialise() to create the singleton.
+ *
+ * Acquires the on-chip LDO, configures the SDMMC host and slot, and
+ * attempts to mount the FAT filesystem.  Sets _mounted accordingly.
+ */
 SDCard::SDCard() : _card(nullptr), _powerControlHandle(nullptr), _mounted(false)
 {
     // Acquire the on-chip LDO that powers the SD card slot (channel 4 on Tab5).
@@ -121,12 +165,18 @@ SDCard::SDCard() : _card(nullptr), _powerControlHandle(nullptr), _mounted(false)
     ESP_LOGI(LOG_TAG, "SD card mounted at %s - %s  %.2f GB", MOUNT_POINT, _card->cid.name, sizeGb);
 }
 
+/**
+ * @brief Destructor.
+ *
+ * Unmounts the FAT filesystem, releases the SDMMC host, and deletes
+ * the on-chip LDO power controller.  Resets the singleton pointer so
+ * that Initialise() may be called again.
+ */
 SDCard::~SDCard()
 {
     if (_mounted)
     {
         esp_vfs_fat_sdcard_unmount(MOUNT_POINT, _card);
-        _card = nullptr;
         _mounted = false;
     }
 
@@ -143,11 +193,24 @@ SDCard::~SDCard()
 // Public accessors
 // -----------------------------------------------------------------------------
 
+/**
+ * @brief Returns whether the card was successfully mounted.
+ *
+ * @return true if the card is mounted and file I/O is available.
+ */
 bool SDCard::IsMounted() const
 {
     return (_mounted);
 }
 
+/**
+ * @brief Returns a pointer to the raw SDMMC card descriptor.
+ *
+ * The descriptor contains card identification data (name, revision,
+ * serial number) and capacity information.
+ *
+ * @return Pointer to sdmmc_card_t, or nullptr if the card is not mounted.
+ */
 const sdmmc_card_t *SDCard::GetCard() const
 {
     return (_card);

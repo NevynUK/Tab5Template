@@ -7,7 +7,6 @@
  * Copyright   : Copyright (c) 2026 Mark Stevens
  * Licence     : MIT — see LICENSE in the repository root for full terms.
  * Target      : M5Stack Tab5 (ESP32-P4)
- * Build system: ESP-IDF v5.5.3
  *---------------------------------------------------------------------------*/
 #include "Coprocessor.hpp"
 
@@ -49,7 +48,7 @@ Coprocessor *Coprocessor::GetInstance()
  * Performs the following sequence:
  *  1. Initialises NVS flash (erases and re-initialises on partition error).
  *  2. Initialises the TCP/IP network stack (esp_netif_init).
- *  3. Creates the default ESP-IDF event loop.
+ *  3. Creates the default event loop (esp_event_loop_create_default).
  *  4. Starts the ESP Hosted SDIO transport via esp_hosted_init(), which
  *     asserts the hardware reset on GPIO 15, enumerates the ESP32-C6, and
  *     registers the virtual WiFi and Bluetooth network interfaces.
@@ -90,12 +89,11 @@ Coprocessor::Coprocessor() : _initialised(false)
     // -------------------------------------------------------------------------
     // Step 1: Initialise NVS flash.
     // NVS is required by the WiFi driver to store calibration data and
-    // credentials.  Erase and re-initialise if the partition is corrupt.
+    // credentials.  Erase and re-initialise if the partition is corrupted.
     // -------------------------------------------------------------------------
     esp_err_t result = nvs_flash_init();
     if (result == ESP_ERR_NVS_NO_FREE_PAGES || result == ESP_ERR_NVS_NEW_VERSION_FOUND)
     {
-        ESP_LOGW(LOG_TAG, "NVS partition truncated or version mismatch — erasing");
         ESP_ERROR_CHECK(nvs_flash_erase());
         result = nvs_flash_init();
     }

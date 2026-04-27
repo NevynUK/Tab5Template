@@ -6,16 +6,12 @@
  * Copyright   : Copyright (c) 2026 Mark Stevens
  * Licence     : MIT — see LICENSE in the repository root for full terms.
  * Target      : M5Stack Tab5 (ESP32-P4)
- * Build system: ESP-IDF v5.5.3
  *---------------------------------------------------------------------------*/
 #pragma once
 
 #include <string>
 #include <vector>
 
-/**
- * @brief Information about a single WiFi access point discovered during a scan.
- */
 struct AccessPointInfo
 {
     /**
@@ -38,6 +34,10 @@ struct AccessPointInfo
      */
     bool hidden;
 };
+
+/**
+ * @brief Information about a single WiFi access point discovered during a scan.
+ */
 
 /**
  * @brief Singleton class providing WiFi functionality via the ESP32-C6 coprocessor.

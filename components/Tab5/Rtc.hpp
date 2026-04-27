@@ -42,12 +42,7 @@ public:
     /**
      * @brief Source clock frequencies for the wakeup timer.
      */
-    enum class TimerClockSource : uint8_t {
-        Hz4096 = 0x00,
-        Hz64 = 0x01,
-        Hz1 = 0x02,
-        Min1 = 0x03
-    };
+    enum class TimerClockSource : uint8_t { Hz4096 = 0x00, Hz64 = 0x01, Hz1 = 0x02, Min1 = 0x03 };
 
     /**
      * @brief Bitmask type for RTC status and interrupt flags.

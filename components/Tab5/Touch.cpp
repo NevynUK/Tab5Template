@@ -14,7 +14,7 @@
 
 #include <algorithm>
 
-/** 
+/**
  * @brief Initialise the static singleton pointer to null.
  */
 TouchInput *TouchInput::_instance = nullptr;

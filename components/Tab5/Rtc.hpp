@@ -134,14 +134,14 @@ private:
     static constexpr uint32_t I2C_FREQUENCY_HZ = 400000;
 
     /**
-     * @brief GPIO pin assigned to I2C SDA on the Tab5 RTC bus.
+     * @brief GPIO pin assigned to I2C SDA on the Tab5 internal bus (I2C_NUM_1).
      */
-    static constexpr gpio_num_t RTC_SDA_PIN = GPIO_NUM_44;
+    static constexpr gpio_num_t RTC_SDA_PIN = GPIO_NUM_31;
 
     /**
-     * @brief GPIO pin assigned to I2C SCL on the Tab5 RTC bus.
+     * @brief GPIO pin assigned to I2C SCL on the Tab5 internal bus (I2C_NUM_1).
      */
-    static constexpr gpio_num_t RTC_SCL_PIN = GPIO_NUM_43;
+    static constexpr gpio_num_t RTC_SCL_PIN = GPIO_NUM_32;
 
     // =========================================================================
     // Register map

@@ -1131,36 +1131,36 @@ private:
      */
     static constexpr uint8_t REG_FIFO_CONFIG_1 = 0x49;
 
-    static constexpr uint8_t  FIFO_STOP_ON_FULL_MASK = 0x01;
-    static constexpr uint8_t  FIFO_TIME_EN_MASK      = 0x02;
-    static constexpr uint8_t  FIFO_HEADER_EN_MASK    = 0x10;
-    static constexpr uint8_t  FIFO_ACC_EN_MASK       = 0x40;
-    static constexpr uint8_t  FIFO_GYR_EN_MASK       = 0x80;
-    static constexpr uint8_t  FIFO_GYR_DOWNS_MASK    = 0x07;
-    static constexpr uint8_t  FIFO_GYR_FILT_MASK     = 0x08;
-    static constexpr uint8_t  FIFO_ACC_DOWNS_MASK    = 0x70;
-    static constexpr uint8_t  FIFO_ACC_DOWNS_POS     = 4;
-    static constexpr uint8_t  FIFO_ACC_FILT_MASK     = 0x80;
-    static constexpr uint8_t  FIFO_FLUSH_CMD         = 0xB0;
+    static constexpr uint8_t FIFO_STOP_ON_FULL_MASK = 0x01;
+    static constexpr uint8_t FIFO_TIME_EN_MASK = 0x02;
+    static constexpr uint8_t FIFO_HEADER_EN_MASK = 0x10;
+    static constexpr uint8_t FIFO_ACC_EN_MASK = 0x40;
+    static constexpr uint8_t FIFO_GYR_EN_MASK = 0x80;
+    static constexpr uint8_t FIFO_GYR_DOWNS_MASK = 0x07;
+    static constexpr uint8_t FIFO_GYR_FILT_MASK = 0x08;
+    static constexpr uint8_t FIFO_ACC_DOWNS_MASK = 0x70;
+    static constexpr uint8_t FIFO_ACC_DOWNS_POS = 4;
+    static constexpr uint8_t FIFO_ACC_FILT_MASK = 0x80;
+    static constexpr uint8_t FIFO_FLUSH_CMD = 0xB0;
 
     // =========================================================================
     // Axis remap constants
     // =========================================================================
 
-    static constexpr uint8_t AXIS_MAP_PAGE       = 1;
+    static constexpr uint8_t AXIS_MAP_PAGE = 1;
     static constexpr uint8_t AXIS_MAP_START_ADDR = 0x04;
-    static constexpr uint8_t AXIS_X_MASK         = 0x03;
-    static constexpr uint8_t AXIS_X_SIGN_MASK    = 0x04;
-    static constexpr uint8_t AXIS_X_SIGN_POS     = 2;
-    static constexpr uint8_t AXIS_Y_MASK         = 0x18;
-    static constexpr uint8_t AXIS_Y_POS          = 3;
-    static constexpr uint8_t AXIS_Y_SIGN_MASK    = 0x20;
-    static constexpr uint8_t AXIS_Y_SIGN_POS     = 5;
-    static constexpr uint8_t AXIS_Z_MASK         = 0xC0;
-    static constexpr uint8_t AXIS_Z_POS          = 6;
-    static constexpr uint8_t AXIS_Z_SIGN_MASK    = 0x01;
-    static constexpr uint8_t AXIS_SOURCE_MASK    = 0x07;
-    static constexpr uint8_t AXIS_SIGN_BIT       = 0x08;
+    static constexpr uint8_t AXIS_X_MASK = 0x03;
+    static constexpr uint8_t AXIS_X_SIGN_MASK = 0x04;
+    static constexpr uint8_t AXIS_X_SIGN_POS = 2;
+    static constexpr uint8_t AXIS_Y_MASK = 0x18;
+    static constexpr uint8_t AXIS_Y_POS = 3;
+    static constexpr uint8_t AXIS_Y_SIGN_MASK = 0x20;
+    static constexpr uint8_t AXIS_Y_SIGN_POS = 5;
+    static constexpr uint8_t AXIS_Z_MASK = 0xC0;
+    static constexpr uint8_t AXIS_Z_POS = 6;
+    static constexpr uint8_t AXIS_Z_SIGN_MASK = 0x01;
+    static constexpr uint8_t AXIS_SOURCE_MASK = 0x07;
+    static constexpr uint8_t AXIS_SIGN_BIT = 0x08;
 
     // =========================================================================
     // Component retrim register constants
@@ -1169,7 +1169,7 @@ private:
     /**
      * @brief Gyroscope CRT configuration register — bit 2 is GYR_CRT_RUNNING.
      */
-    static constexpr uint8_t REG_GYR_CRT_CONF     = 0x69;
+    static constexpr uint8_t REG_GYR_CRT_CONF = 0x69;
 
     /**
      * @brief Mask for the GYR_CRT_RUNNING bit in REG_GYR_CRT_CONF.
@@ -1179,7 +1179,7 @@ private:
     /**
      * @brief Command value for triggering the G_TRIGGER (CRT) operation.
      */
-    static constexpr uint8_t G_TRIGGER_CMD        = 0x02;
+    static constexpr uint8_t G_TRIGGER_CMD = 0x02;
 
     // =========================================================================
     // Auxiliary I2C register constants
@@ -1188,54 +1188,54 @@ private:
     /**
      * @brief First AUX data output register (8 bytes, 0x04–0x0B).
      */
-    static constexpr uint8_t REG_AUX_X_LSB          = 0x04;
+    static constexpr uint8_t REG_AUX_X_LSB = 0x04;
 
     /**
      * @brief AUX interface ODR and read-offset configuration register.
      */
-    static constexpr uint8_t REG_AUX_CONF           = 0x44;
+    static constexpr uint8_t REG_AUX_CONF = 0x44;
 
     /**
      * @brief AUX sensor I2C device address register (7-bit addr in bits[7:1]).
      */
-    static constexpr uint8_t REG_AUX_DEV_ID         = 0x4B;
+    static constexpr uint8_t REG_AUX_DEV_ID = 0x4B;
 
     /**
      * @brief AUX interface configuration register (manual mode, burst length).
      */
-    static constexpr uint8_t REG_AUX_IF_CONF        = 0x4C;
+    static constexpr uint8_t REG_AUX_IF_CONF = 0x4C;
 
     /**
      * @brief AUX read address register — write the target sensor register here
      *        to trigger a manual read.
      */
-    static constexpr uint8_t REG_AUX_RD_ADDR        = 0x4D;
+    static constexpr uint8_t REG_AUX_RD_ADDR = 0x4D;
 
     /**
      * @brief AUX write address register.
      */
-    static constexpr uint8_t REG_AUX_WR_ADDR        = 0x4E;
+    static constexpr uint8_t REG_AUX_WR_ADDR = 0x4E;
 
     /**
      * @brief AUX write data register.
      */
-    static constexpr uint8_t REG_AUX_WR_DATA        = 0x4F;
+    static constexpr uint8_t REG_AUX_WR_DATA = 0x4F;
 
     /**
      * @brief Interface configuration register (AUX enable, OIS, SPI3 mode).
      */
-    static constexpr uint8_t REG_IF_CONF            = 0x6B;
+    static constexpr uint8_t REG_IF_CONF = 0x6B;
 
-    static constexpr uint8_t AUX_IF_EN_MASK         = 0x20;
-    static constexpr uint8_t AUX_SET_I2C_ADDR_MASK  = 0xFE;
-    static constexpr uint8_t AUX_SET_I2C_ADDR_POS   = 1;
-    static constexpr uint8_t AUX_MAN_MODE_EN_MASK   = 0x80;
+    static constexpr uint8_t AUX_IF_EN_MASK = 0x20;
+    static constexpr uint8_t AUX_SET_I2C_ADDR_MASK = 0xFE;
+    static constexpr uint8_t AUX_SET_I2C_ADDR_POS = 1;
+    static constexpr uint8_t AUX_MAN_MODE_EN_MASK = 0x80;
     static constexpr uint8_t AUX_MAN_READ_BURST_MASK = 0x0C;
     static constexpr uint8_t AUX_MAN_READ_BURST_POS = 2;
-    static constexpr uint8_t AUX_READ_BURST_MASK    = 0x03;
-    static constexpr uint8_t AUX_ODR_MASK           = 0x0F;
-    static constexpr uint8_t AUX_BUSY_MASK          = 0x04;
-    static constexpr uint8_t AUX_NUM_BYTES          = 8;
+    static constexpr uint8_t AUX_READ_BURST_MASK = 0x03;
+    static constexpr uint8_t AUX_ODR_MASK = 0x0F;
+    static constexpr uint8_t AUX_BUSY_MASK = 0x04;
+    static constexpr uint8_t AUX_NUM_BYTES = 8;
 
     // =========================================================================
     // Constructor and helpers

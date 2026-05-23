@@ -76,8 +76,7 @@ Imu *Imu::Initialise()
     {
         if (attempt > 0)
         {
-            ESP_LOGW(LOG_TAG, "Retrying BMI270 initialisation (attempt %d of %d).",
-                     attempt + 1, MAX_ATTEMPTS);
+            ESP_LOGW(LOG_TAG, "Retrying BMI270 initialisation (attempt %d of %d).", attempt + 1, MAX_ATTEMPTS);
             vTaskDelay(pdMS_TO_TICKS(RETRY_DELAY_MS));
         }
 
@@ -118,10 +117,7 @@ bool Imu::GetAcceleration(Vector3 &acceleration)
         return (false);
     }
 
-    auto toSigned16 = [](uint8_t low, uint8_t high) -> int16_t
-    {
-        return (static_cast<int16_t>((static_cast<uint16_t>(high) << 8) | static_cast<uint16_t>(low)));
-    };
+    auto toSigned16 = [](uint8_t low, uint8_t high) -> int16_t { return (static_cast<int16_t>((static_cast<uint16_t>(high) << 8) | static_cast<uint16_t>(low))); };
 
     acceleration.x = static_cast<float>(toSigned16(buffer[0], buffer[1])) / ACC_SENSITIVITY_LSB_PER_G;
     acceleration.y = static_cast<float>(toSigned16(buffer[2], buffer[3])) / ACC_SENSITIVITY_LSB_PER_G;
@@ -149,10 +145,7 @@ bool Imu::GetGyroscope(Vector3 &gyroscope)
         return (false);
     }
 
-    auto toSigned16 = [](uint8_t low, uint8_t high) -> int16_t
-    {
-        return (static_cast<int16_t>((static_cast<uint16_t>(high) << 8) | static_cast<uint16_t>(low)));
-    };
+    auto toSigned16 = [](uint8_t low, uint8_t high) -> int16_t { return (static_cast<int16_t>((static_cast<uint16_t>(high) << 8) | static_cast<uint16_t>(low))); };
 
     gyroscope.x = static_cast<float>(toSigned16(buffer[0], buffer[1])) / GYR_SENSITIVITY_LSB_PER_DPS;
     gyroscope.y = static_cast<float>(toSigned16(buffer[2], buffer[3])) / GYR_SENSITIVITY_LSB_PER_DPS;
@@ -359,7 +352,7 @@ bool Imu::UploadConfigFile()
     {
         uint16_t wordAddress = static_cast<uint16_t>((index * CHUNK_PAYLOAD) / 2);
 
-        uint8_t addrLow  = static_cast<uint8_t>(wordAddress & 0x0F);
+        uint8_t addrLow = static_cast<uint8_t>(wordAddress & 0x0F);
         uint8_t addrHigh = static_cast<uint8_t>((wordAddress >> 4) & 0xFF);
 
         /*
@@ -368,7 +361,7 @@ bool Imu::UploadConfigFile()
          * creates a window where the BMI270 sees a half-updated word address,
          * which can silently corrupt the config upload.
          */
-        uint8_t addrBuffer[3] = { REG_INIT_ADDR_0, addrLow, addrHigh };
+        uint8_t addrBuffer[3] = {REG_INIT_ADDR_0, addrLow, addrHigh};
         esp_err_t result = i2c_master_transmit(_deviceHandle, addrBuffer, sizeof(addrBuffer), -1);
         if (result != ESP_OK)
         {
@@ -697,8 +690,7 @@ bool Imu::SetGyroscopePowerMode(uint8_t filterMode, uint8_t noiseMode)
     }
 
     uint8_t mask = GYR_CONF_FILTER_PERF_MASK | GYR_CONF_NOISE_PERF_MASK;
-    uint8_t value = static_cast<uint8_t>(((filterMode & 0x01) != 0 ? GYR_CONF_FILTER_PERF_MASK : 0x00) |
-                                          ((noiseMode & 0x01) != 0 ? GYR_CONF_NOISE_PERF_MASK : 0x00));
+    uint8_t value = static_cast<uint8_t>(((filterMode & 0x01) != 0 ? GYR_CONF_FILTER_PERF_MASK : 0x00) | ((noiseMode & 0x01) != 0 ? GYR_CONF_NOISE_PERF_MASK : 0x00));
     return (ModifyRegister(REG_GYR_CONF, mask, value));
 }
 
@@ -774,10 +766,7 @@ bool Imu::GetStepCount(uint32_t &count)
     }
 
     const uint8_t index = STEP_COUNT_OUT_OFFSET;
-    count = static_cast<uint32_t>(page[index]) |
-            (static_cast<uint32_t>(page[index + 1]) << 8) |
-            (static_cast<uint32_t>(page[index + 2]) << 16) |
-            (static_cast<uint32_t>(page[index + 3]) << 24);
+    count = static_cast<uint32_t>(page[index]) | (static_cast<uint32_t>(page[index + 1]) << 8) | (static_cast<uint32_t>(page[index + 2]) << 16) | (static_cast<uint32_t>(page[index + 3]) << 24);
     return (true);
 }
 
@@ -803,8 +792,7 @@ bool Imu::ResetStepCount()
         return (false);
     }
 
-    uint16_t word = static_cast<uint16_t>(page[STEP_COUNT_CONFIG_OFFSET]) |
-                    (static_cast<uint16_t>(page[STEP_COUNT_CONFIG_OFFSET + 1]) << 8);
+    uint16_t word = static_cast<uint16_t>(page[STEP_COUNT_CONFIG_OFFSET]) | (static_cast<uint16_t>(page[STEP_COUNT_CONFIG_OFFSET + 1]) << 8);
 
     word |= STEP_COUNT_RESET_MASK;
 
@@ -837,8 +825,7 @@ bool Imu::SetStepCountWatermark(uint16_t watermark)
         return (false);
     }
 
-    uint16_t word = static_cast<uint16_t>(page[STEP_COUNT_CONFIG_OFFSET]) |
-                    (static_cast<uint16_t>(page[STEP_COUNT_CONFIG_OFFSET + 1]) << 8);
+    uint16_t word = static_cast<uint16_t>(page[STEP_COUNT_CONFIG_OFFSET]) | (static_cast<uint16_t>(page[STEP_COUNT_CONFIG_OFFSET + 1]) << 8);
 
     word = static_cast<uint16_t>((word & ~STEP_COUNT_WATERMARK_MASK) | (watermark & STEP_COUNT_WATERMARK_MASK));
 
@@ -1262,8 +1249,7 @@ bool Imu::RemapAxes(uint8_t xSource, uint8_t ySource, uint8_t zSource)
      * The user constants follow the BMI2 convention: 0x01=X, 0x02=Y, 0x04=Z,
      * with sign bit 0x08.  Axis field = trailing-zero index of bits[2:0].
      */
-    auto toAxisNum = [](uint8_t source) -> uint8_t
-    {
+    auto toAxisNum = [](uint8_t source) -> uint8_t {
         uint8_t bits = static_cast<uint8_t>(source & AXIS_SOURCE_MASK);
         if ((bits & 0x01) != 0)
         {
@@ -1278,10 +1264,7 @@ bool Imu::RemapAxes(uint8_t xSource, uint8_t ySource, uint8_t zSource)
         return (2);
     };
 
-    auto toSign = [](uint8_t source) -> uint8_t
-    {
-        return ((source & AXIS_SIGN_BIT) != 0) ? 1 : 0;
-    };
+    auto toSign = [](uint8_t source) -> uint8_t { return ((source & AXIS_SIGN_BIT) != 0) ? 1 : 0; };
 
     uint8_t xAxis = toAxisNum(xSource);
     uint8_t xSign = toSign(xSource);
@@ -1301,20 +1284,13 @@ bool Imu::RemapAxes(uint8_t xSource, uint8_t ySource, uint8_t zSource)
      * Pack the axis fields into byte 0x04 (fully replaced — all six fields
      * are encoded here).
      */
-    page[AXIS_MAP_START_ADDR] = static_cast<uint8_t>(
-        (xAxis & AXIS_X_MASK) |
-        ((xSign << AXIS_X_SIGN_POS) & AXIS_X_SIGN_MASK) |
-        ((yAxis << AXIS_Y_POS) & AXIS_Y_MASK) |
-        ((ySign << AXIS_Y_SIGN_POS) & AXIS_Y_SIGN_MASK) |
-        ((zAxis << AXIS_Z_POS) & AXIS_Z_MASK));
+    page[AXIS_MAP_START_ADDR] = static_cast<uint8_t>((xAxis & AXIS_X_MASK) | ((xSign << AXIS_X_SIGN_POS) & AXIS_X_SIGN_MASK) | ((yAxis << AXIS_Y_POS) & AXIS_Y_MASK) | ((ySign << AXIS_Y_SIGN_POS) & AXIS_Y_SIGN_MASK) | ((zAxis << AXIS_Z_POS) & AXIS_Z_MASK));
 
     /*
      * Byte 0x05 also holds the gyroscope self-offset correction enable bit
      * (bit 1), so only bit 0 (z_axis_sign) is updated here.
      */
-    page[AXIS_MAP_START_ADDR + 1] = static_cast<uint8_t>(
-        (page[AXIS_MAP_START_ADDR + 1] & static_cast<uint8_t>(~AXIS_Z_SIGN_MASK)) |
-        (zSign & AXIS_Z_SIGN_MASK));
+    page[AXIS_MAP_START_ADDR + 1] = static_cast<uint8_t>((page[AXIS_MAP_START_ADDR + 1] & static_cast<uint8_t>(~AXIS_Z_SIGN_MASK)) | (zSign & AXIS_Z_SIGN_MASK));
 
     return (WriteFeaturePage(AXIS_MAP_PAGE, page));
 }
@@ -1433,9 +1409,7 @@ bool Imu::GetFifoLength(uint16_t &length)
         return (false);
     }
 
-    length = static_cast<uint16_t>(
-        static_cast<uint16_t>(buffer[0]) |
-        (static_cast<uint16_t>(buffer[1] & 0x3F) << 8));
+    length = static_cast<uint16_t>(static_cast<uint16_t>(buffer[0]) | (static_cast<uint16_t>(buffer[1] & 0x3F) << 8));
 
     return (true);
 }
@@ -1645,14 +1619,10 @@ bool Imu::ConfigureAux(const AuxConfig &config)
         return (false);
     }
 
-    devIfRegs[0] = static_cast<uint8_t>(
-        (devIfRegs[0] & static_cast<uint8_t>(~AUX_SET_I2C_ADDR_MASK)) |
-        ((config.i2cAddress << AUX_SET_I2C_ADDR_POS) & AUX_SET_I2C_ADDR_MASK));
+    devIfRegs[0] = static_cast<uint8_t>((devIfRegs[0] & static_cast<uint8_t>(~AUX_SET_I2C_ADDR_MASK)) | ((config.i2cAddress << AUX_SET_I2C_ADDR_POS) & AUX_SET_I2C_ADDR_MASK));
 
     devIfRegs[1] = static_cast<uint8_t>(
-        (devIfRegs[1] & static_cast<uint8_t>(~(AUX_MAN_MODE_EN_MASK | AUX_MAN_READ_BURST_MASK | AUX_READ_BURST_MASK))) |
-        (config.manualMode ? AUX_MAN_MODE_EN_MASK : 0x00) |
-        static_cast<uint8_t>((config.burstReadLength << AUX_MAN_READ_BURST_POS) & AUX_MAN_READ_BURST_MASK) |
+        (devIfRegs[1] & static_cast<uint8_t>(~(AUX_MAN_MODE_EN_MASK | AUX_MAN_READ_BURST_MASK | AUX_READ_BURST_MASK))) | (config.manualMode ? AUX_MAN_MODE_EN_MASK : 0x00) | static_cast<uint8_t>((config.burstReadLength << AUX_MAN_READ_BURST_POS) & AUX_MAN_READ_BURST_MASK) |
         static_cast<uint8_t>(config.burstReadLength & AUX_READ_BURST_MASK));
 
     uint8_t writeBuffer[3];
@@ -1758,8 +1728,7 @@ bool Imu::WriteAux(uint8_t regAddr, uint8_t data)
     /*
      * Helper lambda: wait for AUX not busy, then write a register.
      */
-    auto waitAndWrite = [](uint8_t reg, uint8_t value) -> bool
-    {
+    auto waitAndWrite = [](uint8_t reg, uint8_t value) -> bool {
         for (int attempt = 0; attempt < 20; ++attempt)
         {
             uint8_t status;

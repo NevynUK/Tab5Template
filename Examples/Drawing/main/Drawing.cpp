@@ -175,7 +175,6 @@ void Setup(void)
 extern "C" void app_main(void)
 {
     Setup();
-
     // All work is performed by the TouchInput FreeRTOS task.
     // Deleting this task frees its stack and TCB immediately rather than
     // keeping a do-nothing loop alive indefinitely.

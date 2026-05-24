@@ -1,0 +1,53 @@
+dependencies:
+  espressif/eppp_link:
+    component_hash: 9472e6825f4bb71eca2b39cf1bc92659c1ac60bfd7416560ad033a7dd8641b17
+    dependencies:
+    - name: espressif/esp_serial_slave_link
+      registry_url: https://components.espressif.com
+      require: private
+      version: ^1.1.0
+    - name: idf
+      require: private
+      version: '>=5.2'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 1.1.4
+  espressif/esp_hosted:
+    dependencies: []
+    source:
+      path: /Users/markstevens/GitHub/Personal/Tab5Template/managed_components/espressif__esp_hosted
+      type: local
+    version: 2.12.3
+  espressif/esp_serial_slave_link:
+    dependencies: []
+    source:
+      path: /Users/markstevens/GitHub/Personal/Tab5Template/managed_components/espressif__esp_serial_slave_link
+      type: local
+    version: 1.1.2
+  espressif/wifi_remote_over_eppp:
+    dependencies: []
+    source:
+      path: /Users/markstevens/GitHub/Personal/Tab5Template/managed_components/espressif__wifi_remote_over_eppp
+      type: local
+    version: 0.3.2
+  idf:
+    source:
+      type: idf
+    version: 5.5.3
+  m5stack/m5gfx:
+    dependencies: []
+    source:
+      path: /Users/markstevens/GitHub/Personal/Tab5Template/managed_components/m5stack__m5gfx
+      type: local
+    version: 0.2.19
+direct_dependencies:
+- espressif/eppp_link
+- espressif/esp_hosted
+- espressif/esp_serial_slave_link
+- espressif/wifi_remote_over_eppp
+- idf
+- m5stack/m5gfx
+manifest_hash: fdfbe688eb644c9b17177d49598fb65695ec16fa74e274f25220c7182dbba41c
+target: esp32p4
+version: 2.0.0

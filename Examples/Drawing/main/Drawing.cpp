@@ -12,13 +12,7 @@
 
 #include <M5GFX.h>
 #include <cstdio>
-#include "Camera.hpp"
-#include "ChargeManager.hpp"
 #include "Coprocessor.hpp"
-#include "Imu.hpp"
-#include "PowerMonitor.hpp"
-#include "Rs485.hpp"
-#include "Rtc.hpp"
 #include "SDCard.hpp"
 #include "Touch.hpp"
 
